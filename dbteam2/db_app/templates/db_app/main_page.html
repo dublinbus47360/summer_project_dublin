@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>mainpage</title>
+  </head>
+  <body>
+    <h1>mainpage</h1>
+    <div id="map" style="width:100%; height:300px;"></div>
+
+    <div id="form">
+        <div class="inputs">
+          <div id="from">
+            <span>FROM:</span>
+            <input id="searchTextField" type="text" size="50" placeholder="Enter starting point" autocomplete="on" runat="server" onclick=""/>
+          </div>
+          <div id="to">
+            <span>TO:</span>
+            <input id="searchTextField2" type="text" size="50" placeholder="Enter ending point" autocomplete="on" runat="server" onclick="" />
+          </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var data = JSON.parse("{{ data }}".replace(/&quot;/g,"\""));
+      console.log(data);
+
+      // Google Maps -------------------
+      var lats = new Array(data.length);
+      var lons = new Array(data.length);
+      var latlons = new Array(data.length);
+      var addresses = new Array(data.length);
+      var stopnumbers = new Array(data.length);
+
+      for (var i=0; i<data.length; i++) {
+        lats[i] = data[i][0];
+        lons[i] = data[i][1];
+        latlons[i] = [data[i][0], data[i][1]];
+        addresses[i] = data[i][3];
+        stopnumbers[i] = data[i][2];
+      }
+
+      function myMap() {
+        var myCenter = {lat: 53.349605, lng:-6.264175 };
+        var mapCanvas = document.getElementById("map");
+        var mapOptions = {center: myCenter, zoom: 11};
+        var map = new google.maps.Map(mapCanvas, mapOptions);
+        infowindow = new google.maps.InfoWindow({
+          maxWidth: 355
+        });
+
+        for(var j=0; j<latlons.length; j++) {
+          var marker=new google.maps.Marker({
+          position:new google.maps.LatLng(latlons[j][0],latlons[j][1]),
+          map:map,
+          address: addresses[j],
+          stopnumber: stopnumbers[j]
+          });
+
+          popupDirections(marker);
+        }
+      }
+
+      function popupDirections(marker) {
+        google.maps.event.addListener(marker, 'click', function() {
+          for (var i=0; i<data.length; i++) {
+            infowindow.setContent('Address: ' + marker.address + '<br> Stop Number: ' + marker.stopnumber);
+          }
+          infowindow.open(map, marker);
+        });
+      }
+
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBi-bH5_sngxNibrgygRZDhmAv2fK5hzus&callback=myMap&libraries=places"></script>
+
+  </body>
+</html>
