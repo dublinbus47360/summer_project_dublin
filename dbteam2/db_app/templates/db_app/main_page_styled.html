@@ -11,28 +11,41 @@
     <div class="container-fluid">
       <div class="row">
         <header class="col">
-          <h1>mainpage</h1>
+          <h1>Dublin Bus Predictor</h1>
         </header>
       </div>
       <div class="row">
-        <div id="map" class="col" style="height: 350px"></div>
-      </div>
-      <div class="row">
-        <div id="form" class="col">
-            <div class="inputs row">
-              <div id="from" class="col-5">
-                <span>FROM:</span>
-                <input id="originInput" type="text" size="40" placeholder="Enter origin" autocomplete="on" runat="server" onclick="setOrigin()"/>
-              </div>
-              <div id="to" class="col-5">
-                <span>TO:</span>
-                <input id="destinationInput" type="text" size="40" placeholder="Enter destination" autocomplete="on" runat="server" onclick="setDestination()"/>
-              </div>
-              <div class="col-2">
-                <input type="submit" value="Submit" onclick="searchRoute()">
-              </div>
+        <div id="map" class="col-lg-8" style="height: 70vh"></div>
+        <div id="form" class="col-lg-4">
+          <div id="form_header" class="row">
+            <h4>Journey Travel Time</h4>
+          </div>
+          <div id="from" class="row">
+            <input id="originInput" type="text" size="40" placeholder="Enter Origin" autocomplete="on" runat="server" onclick="setOrigin()"/>
+          </div>
+          <div id="to" class="row">
+            <input id="destinationInput" type="text" size="40" placeholder="Enter Destination" autocomplete="on" runat="server" onclick="setDestination()"/>
+          </div>
+          <div id="bus_line" class="row">
+            <input id="destinationInput" type="text" size="40" placeholder="Enter Bus Line"/>
+          </div>
+          <div id="date" class="row">
+            <input id="destinationInput" type="text" size="40" placeholder="Enter Date"/>
+          </div>
+          <div id="time" class="row">
+            <input id="destinationInput" type="text" size="40" placeholder="Enter Time"/>
+          </div>
+          <div class="row">
+            <input type="submit" value="Go!" onclick="searchRoute()">
           </div>
         </div>
+
+      </div>
+      <div id="events" class="row">
+        <span class="col">event</span>
+        <span class="col">event</span>
+        <span class="col">event</span>
+        <span class="col">event</span>
       </div>
     </div>
 
