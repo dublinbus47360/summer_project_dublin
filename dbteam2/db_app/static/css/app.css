@@ -1,0 +1,173 @@
+header {
+  height: 15vh;
+  border-bottom: 2px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#map {
+  height: 70vh;
+}
+
+#form {
+  background-color: #e6e6e8;
+}
+
+#form_header h4{
+  font-size: 1.2em;
+}
+
+.input, #form_header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.input input, .input select {
+  font-size: 0.9em;
+  border: 2px solid black;
+  width: 200px;
+  height: 30px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.input option {
+  text-align: center;
+  color: grey;
+}
+
+#bus_line, #time, #date {
+  color: grey;
+  background-color: white;
+  text-align-last: center;
+}
+
+#submit {
+  padding-top: 3px;
+  background-color: #b4b6b4;
+  color: white;
+}
+
+#events {
+  border-top: 2px solid black;
+  padding-top: 20px;
+}
+
+.event {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.event_date span {
+  display: block;
+  text-align: center;
+
+}
+
+.event_info {
+  margin-left: 30px;
+}
+
+.event_info span {
+  display: block;
+  text-align: left;
+}
+
+.grey_text {
+  color: grey;
+}
+
+body {
+  position: relative;
+}
+
+.bottom_drop {
+  position: absolute;
+  height: 5vh;
+  width: 100%;
+  top: 95vh;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+#bottom_button {
+  height: 100%;
+  width: 50%;
+  background-color: white;
+  border-top: 1px solid black;
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+#bottom_button p {
+  margin-top: 5px;
+}
+
+@media screen and (max-width: 767px) {
+  header {
+    height: 10vh;
+    position: relative;
+  }
+
+  header button {
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+  }
+
+  .burger {
+    width: 35px;
+    height: 5px;
+    background-color: black;
+    margin: 6px 0;
+  }
+
+  #map {
+    height: 90vh;
+  }
+
+  main {
+    position: relative;
+  }
+
+  #form {
+    position: absolute;
+    right: 0;
+    top: 10vh;
+    width: 60vw;
+  }
+
+  #submit {
+    margin-bottom: 20px;
+  }
+
+  .event {
+    margin-bottom: 20px;
+  }
+
+  .event_date {
+    width: 20%;
+  }
+
+  .event_info {
+    width: 80%;
+  }
+
+  .event_date span {
+    text-align: right;
+  }
+
+  #events {
+    position: absolute;
+    height: 45vh;
+    top: 55vh;
+    background-color: white;
+  }
+}

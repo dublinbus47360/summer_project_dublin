@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
@@ -5,53 +6,196 @@
     <title>mainpage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
   </head>
   <body>
     <div class="container-fluid">
       <div class="row">
-        <header class="col">
-          <h1>Dublin Bus Predictor</h1>
+        <header id="header" class="col">
+          <h1>Dublin Bus</h1>
         </header>
       </div>
-      <div class="row">
-        <div id="map" class="col-lg-8" style="height: 70vh"></div>
-        <div id="form" class="col-lg-4">
+      <div id="main_section" class="row">
+        <div id="map" class="col-md-9 "></div>
+        <div id="form" class="col-md-3 d-none d-md-block">
           <div id="form_header" class="row">
-            <h4>Journey Travel Time</h4>
+            <h4>Travel Time Predictor</h4>
           </div>
-          <div id="from" class="row">
-            <input id="originInput" type="text" size="40" placeholder="Enter Origin" autocomplete="on" runat="server" onclick="setOrigin()"/>
+          <div class="row input">
+            <input id="originInput" class="form-control" type="text" placeholder="Enter Origin" autocomplete="on" runat="server" onclick="setOrigin()"/>
           </div>
-          <div id="to" class="row">
-            <input id="destinationInput" type="text" size="40" placeholder="Enter Destination" autocomplete="on" runat="server" onclick="setDestination()"/>
+          <div class="row input">
+            <input id="destinationInput" class="form-control" type="text" placeholder="Enter Destination" autocomplete="on" runat="server" onclick="setDestination()"/>
           </div>
-          <div id="bus_line" class="row">
-            <input id="destinationInput" type="text" size="40" placeholder="Enter Bus Line"/>
+          <div class="row input">
+            <select id="bus_line">
+              <option value="Null" selected>Enter Bus Line</option>
+            </select>
           </div>
-          <div id="date" class="row">
-            <input id="destinationInput" type="text" size="40" placeholder="Enter Date"/>
+          <div class="row input">
+            <select id="date">
+              <option value="Null" selected>Enter Date</option>
+            </select>
           </div>
-          <div id="time" class="row">
-            <input id="destinationInput" type="text" size="40" placeholder="Enter Time"/>
+          <div class="row input">
+            <select id="time">
+              <option value="Null" selected>Enter time</option>
+            </select>
           </div>
-          <div class="row">
-            <input type="submit" value="Go!" onclick="searchRoute()">
+          <div class="row input">
+            <input id="submit" type="submit" class="form-control font-weight-bold align-middle" value="Go!" onclick="searchRoute()">
           </div>
         </div>
 
       </div>
+      <div class="row">
+        <div class="col bottom_drop d-sm-none">
+          <div id="bottom_button">
+            <p>Events</p>
+          </div>
+        </div>
+      </div>
       <div id="events" class="row">
-        <span class="col">event</span>
-        <span class="col">event</span>
-        <span class="col">event</span>
-        <span class="col">event</span>
+        <div id="event1" class="col-md d-none d-md-block">
+          <div class="event">
+            <div class="event_date">
+              <span class="grey_text">JUN</span>
+              <span>12</span>
+            </div>
+            <div class="event_info">
+              <span class="grey_text">Thu - 18:00</span>
+              <span>Fleetwood Mac</span>
+              <span class="grey_text">RDS Arena - Dublin</span>
+            </div>
+          </div>
+        </div>
+        <div id="event2" class="col-md d-none d-md-block">
+          <div class="event">
+            <div class="event_date">
+              <span class="grey_text">JUN</span>
+              <span>14</span>
+            </div>
+            <div class="event_info">
+              <span class="grey_text">Fri - 17:00</span>
+              <span>Mumford & Sons</span>
+              <span class="grey_text">Malahide Castle - Co. Dublin</span>
+            </div>
+          </div>
+        </div>
+        <div id="event3" class="col-md d-none d-md-block">
+          <div class="event">
+            <div class="event_date">
+              <span class="grey_text">JUN</span>
+              <span>15</span>
+            </div>
+            <div class="event_info">
+              <span class="grey_text">Sat - 18:00</span>
+              <span>Bon Jovi: This House Is Not for Sale</span>
+              <span class="grey_text">RDS Arena - Dublin</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <script type="text/javascript">
-      // var data = JSON.parse("{{ apikey }}".replace(/&quot;/g,"\""));
-      // console.log(data);
+      var bus_lines = JSON.parse("{{ bus_lines }}".replace(/&quot;/g,"\""));
+      // console.log(bus_lines);
+
+      for (var i=0; i<bus_lines.length; i++) {
+        document.getElementById('bus_line').innerHTML += '<option>' + bus_lines[i] + '</option>';
+      }
+
+      // Create new date object after custom number of days have passed
+      Date.prototype.addDays = function(days) {
+        var date = new Date(this.valueOf());
+        date.setDate(date.getDate() + days);
+        return date;
+      }
+
+      // Create options for five days  (up to weather forecast possibilities)
+      var dateNew = new Date();
+      var dateNew1 = dateNew.addDays(1);
+      var dateNew2 = dateNew.addDays(2);
+      var dateNew3 = dateNew.addDays(3);
+      var dateNew4 = dateNew.addDays(4);
+
+      var ourdate = dateNew.getFullYear() + "-" + ("0"+(dateNew.getMonth()+1)).slice(-2) + "-" + ("0"+dateNew.getDate()).slice(-2);
+      var ourDate1 = dateNew1.getFullYear() + "-" + ("0"+(dateNew1.getMonth()+1)).slice(-2) + "-" + ("0"+dateNew1.getDate()).slice(-2);
+      var ourDate2 = dateNew2.getFullYear() + "-" + ("0"+(dateNew2.getMonth()+1)).slice(-2) + "-" + ("0"+dateNew2.getDate()).slice(-2);
+      var ourDate3 = dateNew3.getFullYear() + "-" + ("0"+(dateNew3.getMonth()+1)).slice(-2) + "-" + ("0"+dateNew3.getDate()).slice(-2);
+      var ourDate4 = dateNew4.getFullYear() + "-" + ("0"+(dateNew4.getMonth()+1)).slice(-2) + "-" + ("0"+dateNew4.getDate()).slice(-2);
+
+      document.getElementById('date').innerHTML += "<option value='"+ourdate+"'>"+ourdate.slice(-2) + '/' + ourdate.slice(5,7)+"</option><option value='"+ourDate1+"'>"+ourDate1.slice(-2) + '/' + ourDate1.slice(5,7)+"</option><option value='"+ourDate2+"'>"+ourDate2.slice(-2) + '/' + ourDate2.slice(5,7)+"</option><option value='"+ourDate3+"'>"+ourDate3.slice(-2) + '/' + ourDate3.slice(5,7)+"</option><option value='"+ourDate4+"'>"+ourDate4.slice(-2) + '/' + ourDate4.slice(5,7)+"</option>"
+
+      var value;
+      for (var j = 0; j < 24; j++) {
+        for (var k = 0; k < 60; k+=10) {
+          if (k == 0) {
+            value = ('0' + j + ':0' + k + ':00').slice(-8);
+          } else {
+            value = ('0' + j + ':' + k + ':00').slice(-8);
+          }
+          document.getElementById('time').innerHTML += "<option value='" + value + "'>" + value.slice(0,5) +"</option>";
+        }
+      }
+
+      function myFunction(x) {
+        if (x.matches) {
+          document.getElementById('header').innerHTML = '<h1>Dublin Bus</h1><button type="menu" name="button" onclick="toggle_menu()"><div class="burger"></div><div class="burger"></div><div class="burger"></div></button>';
+          document.getElementById('submit').addEventListener("click", function() {
+            $("#form").addClass("d-none");
+            $("#form").addClass("d-md-block");
+            $("#form").addClass("col-md-3");
+            toggle_count = 0;
+          });
+        } else {
+          document.getElementById('header').innerHTML = '<h1>Dublin Bus</h1>';
+        }
+      }
+
+      var x = window.matchMedia('(max-width: 767px)');
+      myFunction(x);
+      x.addListener(myFunction);
+
+      var toggle_count = 0;
+      function toggle_menu() {
+        if (toggle_count == 0) {
+          $("#form").removeClass("d-none");
+          $("#form").removeClass("d-md-block");
+          $("#form").removeClass("col-md-3");
+          toggle_count = 1;
+        } else {
+          $("#form").addClass("d-none");
+          $("#form").addClass("d-md-block");
+          $("#form").addClass("col-md-3");
+          toggle_count = 0;
+        }
+      }
+
+      var toggle_count2 = 0;
+      document.getElementById('bottom_button').addEventListener("click", function() {
+        if (toggle_count2 == 0) {
+          $("#event1").removeClass("d-none");
+          $("#event1").removeClass("d-md-block");
+          $("#event2").removeClass("d-none");
+          $("#event2").removeClass("d-md-block");
+          $("#event3").removeClass("d-none");
+          $("#event3").removeClass("d-md-block");
+          toggle_count2 = 1;
+          $(".bottom_drop").css({"top":"50vh"});
+        } else {
+          $("#event1").addClass("d-none");
+          $("#event1").addClass("d-md-block");
+          $("#event2").addClass("d-none");
+          $("#event2").addClass("d-md-block");
+          $("#event3").addClass("d-none");
+          $("#event3").addClass("d-md-block");
+          toggle_count2 = 0;
+          $(".bottom_drop").css({"top":"95vh"});
+        }
+      })
 
       // Google Maps -------------------
       // var lats = new Array(data.length);
