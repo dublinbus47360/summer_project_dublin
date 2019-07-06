@@ -16,23 +16,123 @@ def main_page(request):
         sys.exit(e)
 
     cur = con.cursor()
-    cur.execute("SELECT distinct bus_line FROM db_data.stoptimes_filtered order by bus_line;")
+    cur.execute("SELECT distinct bus_line, stop_headsign FROM db_data.stoptimes_filtered order by bus_line;")
     data = cur.fetchall()
 
     bus_lines = []
     for i in data:
-        bus_lines.append(i[0])
+        bus_lines.append(i)
     # print(bus_lines)
 
     # return render(request, 'db_app/main_page.html', {'data': json.dumps(data)})
-    return render(request, 'db_app/main_page_styled.html', {'apikey': 'AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU', 'bus_lines': json.dumps(bus_lines)})
+    return render(request, 'db_app/main_page_styled2.html', {'apikey': 'AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU', 'bus_lines': json.dumps(bus_lines)})
 
 def search_route(request):
     origin = request.POST['origin']
     destination = request.POST['destination']
 
-    googleRequest = requests.get('https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=transit&key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU')
+    googleRequest = requests.get('https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=transit&transit_mode=bus&key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU')
 
-    print(googleRequest)
+    response = googleRequest.json()
 
-    return HttpResponse(googleRequest)
+    def get_middle(response, step):
+        sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
+        where stops.stop_id = stoptimes_filtered.stop_id and db_data.stoptimes_filtered.bus_line=%s
+        and db_data.stoptimes_filtered.stop_headsign=%s and (stop_name LIKE %s or stop_name LIKE %s) '''
+
+        db = pymysql.connect(host="127.0.0.1",  # your host
+                             user="root",  # username
+                             passwd="A0206304131z",  # password
+                             db="db_data")  # name of the database
+
+        stop_names1 = '%'+ response['routes'][0]['legs'][0]['steps'][step]['transit_details']['departure_stop']['name'] + '%'
+        stop_names2 = '%'+ response['routes'][0]['legs'][0]['steps'][step]['transit_details']['arrival_stop']['name'] + '%'
+        line_selected = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['line']['short_name']
+        headsign_selected = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['headsign']
+        number_stops = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['num_stops']
+
+        cursor = db.cursor()
+        cursor.execute(sql, (line_selected, headsign_selected, stop_names1, stop_names2))
+        possible_stops = cursor.fetchall()
+
+        if possible_stops[0][2]+possible_stops[0][3] != possible_stops[1][2]+possible_stops[1][3]:
+            stop1 = possible_stops[0][2]
+            stop2 = possible_stops[1][2]
+        else:
+            for i in range(1,len(possible_stops)):
+                if possible_stops[0][2]+possible_stops[0][3] != possible_stops[i][2]+possible_stops[i][3]:
+                    stop1 = possible_stops[0][2]
+                    stop2 = possible_stops[i][2]
+                    break
+                else:
+                    return 'error: possible stops doesnt match'
+
+        sql = '''select db_data.stoptimes_filtered.trip_id, db_data.stoptimes_filtered.bus_line, db_data.stoptimes_filtered.stop_sequence, db_data.stoptimes_filtered.stop_headsign
+        from db_data.stoptimes_filtered
+        where stoptimes_filtered.stop_headsign=%s and stoptimes_filtered.bus_line=%s and (stop_id=%s or stop_id=%s)'''
+
+        cursor = db.cursor()
+        cursor.execute(sql, (headsign_selected,line_selected,stop1,stop2))
+        startend_stops = cursor.fetchall()
+
+        print(startend_stops)
+
+        if len(startend_stops) == 2:
+            startend_sequence = [startend_stops[0][0], min(startend_stops[0][2], startend_stops[1][2]), max(startend_stops[0][2], startend_stops[1][2])]
+        else:
+            for i in range(1,len(startend_stops)):
+                if (startend_stops[0][0] == startend_stops[i][0]) and (max(startend_stops[0][2], startend_stops[i][2]) - min(startend_stops[0][2], startend_stops[i][2]) == number_stops):
+                    startend_sequence = [startend_stops[0][0], min(startend_stops[0][2], startend_stops[i][2]), max(startend_stops[0][2], startend_stops[i][2])]
+                    break
+                else:
+                    return 'error: startend stops doesnt match'
+
+        sql = '''select stops.stop_id, stop_sequence, stop_headsign, bus_line, stop_lat, stop_lon, stop_name
+                from db_data.stoptimes_filtered, db_data.stops
+                where stops.stop_id = stoptimes_filtered.stop_id and stoptimes_filtered.stop_headsign =%s
+                and stoptimes_filtered.bus_line = %s and trip_id =%s and stop_sequence between %s and %s
+                order by stop_sequence'''
+
+        cursor = db.cursor()
+        cursor.execute(sql, (headsign_selected,line_selected,startend_sequence[0],startend_sequence[1]+1,startend_sequence[2]-1))
+        result = cursor.fetchall()
+        db.close()
+
+        for i in result:
+            print(i)
+
+        return result
+
+    middle_stops = []
+    for i in range(0, len(response['routes'][0]['legs'][0]['steps'])):
+        if response['routes'][0]['legs'][0]['steps'][i]['travel_mode'] == 'TRANSIT':
+            try:
+                middle_stops.append(get_middle(response, i))
+            except:
+                middle_stops.append('error: could not find intermediate stops for this route')
+
+    return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
+
+def show_route(request):
+    bus_line = request.POST['bus_line']
+    # print(bus_line)
+    input = bus_line.split(' ', 1)
+    # print(input)
+    input_line = input[0]
+    input_headsign = input[1][1:-1]
+
+    host='127.0.0.1'
+    user = 'root'
+    password = 'A0206304131z'
+    db = 'db_data'
+
+    try:
+        con = pymysql.connect(host=host,user=user,password=password,db=db, use_unicode=True, charset='utf8')
+    except Exception as e:
+        sys.exit(e)
+
+    cur = con.cursor()
+    cur.execute("SELECT distinct * FROM db_data.stoptimes_filtered, db_data.stops where stops.stop_id = stoptimes_filtered.stop_id and bus_line=%s and stop_headsign=%s", (input_line, input_headsign))
+    result = cur.fetchall()
+
+    return HttpResponse(json.dumps({'route_stops':result}))

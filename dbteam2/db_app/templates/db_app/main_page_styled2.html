@@ -6,20 +6,22 @@
     <title>mainpage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app2.css' %}">
+    <script src="https://kit.fontawesome.com/7e0916f0c5.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
   </head>
   <body>
     <div class="container-fluid">
       <div class="row">
         <header id="header" class="col">
+          <img id="logo" src="{% static 'img/logo.png' %}" alt="app logo">
           <h1>Dublin Bus</h1>
         </header>
       </div>
       <div id="main_section" class="row">
         <div id="map" class="col-md-9 "></div>
         <div id="form" class="col-md-3 d-none d-md-block">
-          <div id="form_header" class="row">
+          <div class="row form_header">
             <h4>Travel Time Predictor</h4>
           </div>
           <div class="row input">
@@ -27,11 +29,6 @@
           </div>
           <div class="row input">
             <input id="destinationInput" class="form-control" type="text" placeholder="Enter Destination" autocomplete="on" runat="server" onclick="setDestination()"/>
-          </div>
-          <div class="row input">
-            <select id="bus_line">
-              <option value="Null" selected>Enter Bus Line</option>
-            </select>
           </div>
           <div class="row input">
             <select id="date">
@@ -46,16 +43,23 @@
           <div class="row input">
             <input id="submit" type="submit" class="form-control font-weight-bold align-middle" value="Go!" onclick="searchRoute()">
           </div>
-          <!-- <div class="row input">
-            <input id="submit2" type="submit" class="form-control font-weight-bold align-middle" value="Go!" onclick="showRoute()">
-          </div> -->
+          <div class="row form_header">
+            <h4>Search Bus Routes</h4>
+          </div>
+          <div class="row input">
+            <select id="bus_line">
+              <option value="Null" selected>Enter Bus Line</option>
+            </select>
+          </div>
+          <div class="row input">
+            <input id="submit2" type="submit" class="form-control font-weight-bold align-middle" value="Search" onclick="showRoute()">
+          </div>
         </div>
-
       </div>
-      <div class="row">
-        <div class="col bottom_drop d-sm-none">
+      <div class="row bottom_drop">
+        <div class="col-4 d-sm-none">
           <div id="bottom_button">
-            <p>Events</p>
+            <p id="bottom_title">Events</p>
           </div>
         </div>
       </div>
@@ -107,7 +111,7 @@
       // console.log(bus_lines);
 
       for (var i=0; i<bus_lines.length; i++) {
-        document.getElementById('bus_line').innerHTML += '<option>' + bus_lines[i] + '</option>';
+        document.getElementById('bus_line').innerHTML += '<option>' + bus_lines[i][0] + ' (' + bus_lines[i][1] + ')</option>';
       }
 
       // Create new date object after custom number of days have passed
@@ -144,9 +148,9 @@
         }
       }
 
-      function myFunction(x) {
-        if (x.matches) {
-          document.getElementById('header').innerHTML = '<h1>Dublin Bus</h1><button type="menu" name="button" onclick="toggle_menu()"><div class="burger"></div><div class="burger"></div><div class="burger"></div></button>';
+      function myFunction(media_query) {
+        if (media_query.matches) {
+          document.getElementById('header').innerHTML = '<img id="logo" src="{% static 'img/logo.png' %}" alt="app logo"><h1>Dublin Bus</h1><button id="burger_button" type="menu" name="button" onclick="toggle_menu()"><div class="burger"></div><div class="burger"></div><div class="burger"></div></button>';
           document.getElementById('submit').addEventListener("click", function() {
             $("#form").addClass("d-none");
             $("#form").addClass("d-md-block");
@@ -154,13 +158,13 @@
             toggle_count = 0;
           });
         } else {
-          document.getElementById('header').innerHTML = '<h1>Dublin Bus</h1>';
+          document.getElementById('header').innerHTML = '<img id="logo" src="{% static 'img/logo.png' %}" alt="app logo"><h1>Dublin Bus</h1>';
         }
       }
 
-      var x = window.matchMedia('(max-width: 767px)');
-      myFunction(x);
-      x.addListener(myFunction);
+      var media_query = window.matchMedia('(max-width: 767px)');
+      myFunction(media_query);
+      media_query.addListener(myFunction);
 
       var toggle_count = 0;
       function toggle_menu() {
@@ -168,11 +172,17 @@
           $("#form").removeClass("d-none");
           $("#form").removeClass("d-md-block");
           $("#form").removeClass("col-md-3");
+          // $("#form").css({"border-left":"1px solid black"});
+          // $("#form").css({"border-bottom":"1px solid black"});
           toggle_count = 1;
+          if (toggle_count2 == 1) {
+            document.getElementById('bottom_title').click();
+          }
         } else {
           $("#form").addClass("d-none");
           $("#form").addClass("d-md-block");
           $("#form").addClass("col-md-3");
+          // $("#form").css({"border":"0px"});
           toggle_count = 0;
         }
       }
@@ -187,7 +197,7 @@
           $("#event3").removeClass("d-none");
           $("#event3").removeClass("d-md-block");
           toggle_count2 = 1;
-          $(".bottom_drop").css({"top":"50.4vh", "z-index":"1"});
+          $(".bottom_drop").css({"top":"50vh"});
         } else {
           $("#event1").addClass("d-none");
           $("#event1").addClass("d-md-block");
@@ -196,57 +206,64 @@
           $("#event3").addClass("d-none");
           $("#event3").addClass("d-md-block");
           toggle_count2 = 0;
-          $(".bottom_drop").css({"top":"95vh", "z-index":"0"});
+          $(".bottom_drop").css({"top":"95vh"});
         }
       })
 
-      // function showRoute() {
-      //   var bus_line = document.getElementById('bus_line').value;
-      //   $.ajax({
-      //     type: "POST",
-      //     url: "{{ 'show_route/' }}",
-      //     data: { csrfmiddlewaretoken: '{{ csrf_token }}', bus_line: bus_line },
-      //     success: function(response) {
-      //       var myData = JSON.parse(response);
-      //       console.log(myData);
-      //
-      //       var myCenter = {lat: 53.349605, lng:-6.264175 };
-      //       var mapCanvas = document.getElementById("map");
-      //       var mapOptions = {center: myCenter, zoom: 11};
-      //       var map = new google.maps.Map(mapCanvas, mapOptions);
-      //       infowindow = new google.maps.InfoWindow({
-      //         maxWidth: 355
-      //       });
-      //
-      //       for(var j=0; j<myData.route_stops.length; j++) {
-      //         var marker=new google.maps.Marker({
-      //         position:new google.maps.LatLng(myData.route_stops[j][7],myData.route_stops[j][9]),
-      //         map:map,
-      //         icon: {
-      //           path: google.maps.SymbolPath.CIRCLE,
-      //           scale: 4,
-      //           fillColor: 'white',
-      //           fillOpacity: 1.0,
-      //           strokeWeight: 2
-      //         },
-      //         stop_id: myData.route_stops[j][1],
-      //         stop_name: myData.route_stops[j][11]
-      //         });
-      //
-      //         popupDirections(marker);
-      //       }
-      //
-      //       function popupDirections(marker) {
-      //         google.maps.event.addListener(marker, 'click', function() {
-      //           for (var i=0; i<myData.route_stops.length; i++) {
-      //             infowindow.setContent('Stop Number: ' + marker.stop_id.slice(-4) + '<br> Stop Name: ' + marker.stop_name);
-      //           }
-      //           infowindow.open(map, marker);
-      //         });
-      //       }
-      //     }
-      //   })
-      // }
+      var events_content = document.getElementById('events').innerHTML;
+
+      function showRoute() {
+        var bus_line = document.getElementById('bus_line').value;
+        $.ajax({
+          type: "POST",
+          url: "{{ 'show_route/' }}",
+          data: { csrfmiddlewaretoken: '{{ csrf_token }}', bus_line: bus_line },
+          success: function(response) {
+            var myData = JSON.parse(response);
+            console.log(myData);
+
+            var myCenter = {lat: 53.349605, lng:-6.264175 };
+            var mapCanvas = document.getElementById("map");
+            var mapOptions = {center: myCenter, zoom: 11};
+            var map = new google.maps.Map(mapCanvas, mapOptions);
+            infowindow = new google.maps.InfoWindow({
+              maxWidth: 355
+            });
+
+            for(var j=0; j<myData.route_stops.length; j++) {
+              var marker=new google.maps.Marker({
+              position:new google.maps.LatLng(myData.route_stops[j][7],myData.route_stops[j][9]),
+              map:map,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 2.5,
+                fillColor: 'white',
+                fillOpacity: 1.0,
+                strokeWeight: 2
+              },
+              stop_id: myData.route_stops[j][1],
+              stop_name: myData.route_stops[j][11]
+              });
+
+              popupDirections(marker);
+            }
+
+            function popupDirections(marker) {
+              google.maps.event.addListener(marker, 'click', function() {
+                for (var i=0; i<myData.route_stops.length; i++) {
+                  infowindow.setContent('Stop Number: ' + marker.stop_id.slice(-4) + '<br> Stop Name: ' + marker.stop_name);
+                }
+                infowindow.open(map, marker);
+              });
+            }
+          }
+        })
+        document.getElementById('events').innerHTML = events_content;
+        document.getElementById('bottom_title').innerHTML = 'Events';
+        if (media_query.matches) {
+          document.getElementById('burger_button').click();
+        }
+      }
 
       // Google Maps -------------------
       function myMap() {
@@ -301,6 +318,30 @@
               secondArray[2] = myData.googleRequest.routes[0].legs[0].end_location.lat;
               secondArray[3] = myData.googleRequest.routes[0].legs[0].end_location.lng;
               displayRoute(secondArray, myData.middle_stops);
+
+              var journey_summary = '<p>';
+              var steps = myData.googleRequest.routes[0].legs[0].steps;
+              for (var i = 0; i < steps.length; i++) {
+                if (steps[i].travel_mode == 'WALKING') {
+                  journey_summary += '<i class="fas fa-walking"></i> ' + steps[i].duration.text.slice(0,-5);
+                } else if (steps[i].travel_mode == 'TRANSIT') {
+                  journey_summary += '<i class="fas fa-bus"></i> ' + steps[i].transit_details.line.short_name;
+                }
+                if (i < steps.length -1) {
+                  journey_summary += '<i class="fas fa-angle-right step_arrow"></i>'
+                }
+              }
+              journey_summary += '</p>';
+              var journey_steps = '';
+              for (var i = 0; i < steps.length; i++) {
+                journey_steps += '<p class="journey_step"><span>' + (i+1) + '. </span>'+ steps[i].html_instructions + '</p>';
+              }
+
+              document.getElementById('bottom_title').innerHTML = 'Journey';
+              document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered distance_time"></i> '+myData.googleRequest.routes[0].legs[0].distance.text+'</span><span><i class="fas fa-stopwatch distance_time"></i> '+myData.googleRequest.routes[0].legs[0].duration.text+'</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span>Weather Forecast - Rain</span><span>CO2 Emission - 0.0 tonnes</span></div></div></div>';
+              if (media_query.matches) {
+                document.getElementById('bottom_title').click();
+              }
             }
           }
         })
