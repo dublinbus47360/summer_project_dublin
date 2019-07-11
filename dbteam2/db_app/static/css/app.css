@@ -14,11 +14,12 @@ header {
   background-color: #e6e6e8;
 }
 
-.form_header h4 {
+#form_header h4 {
   font-size: 1.2em;
+  text-align: center;
 }
 
-.input, .form_header {
+.input, #form_header {
   display: flex;
   justify-content: center;
   align-items: center;
