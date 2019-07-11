@@ -4,6 +4,7 @@ from django.http import HttpResponse
 
 # Create your views here.
 def main_page(request):
+    ''' First view to be executed. Renders the mainpage html sending 2 pieces of data to frontend (google api key; list of all distinct bus lines and respective headsigns)'''
 
     host='127.0.0.1'
     user = 'root'
@@ -25,17 +26,21 @@ def main_page(request):
     # print(bus_lines)
 
     # return render(request, 'db_app/main_page.html', {'data': json.dumps(data)})
-    return render(request, 'db_app/main_page_styled2.html', {'apikey': 'AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU', 'bus_lines': json.dumps(bus_lines)})
+    return render(request, 'db_app/main_page_styled3.html', {'apikey': 'AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU', 'bus_lines': json.dumps(bus_lines)})
 
 def search_route(request):
-    origin = request.POST['origin']
-    destination = request.POST['destination']
+    ''' Gets the intermediate stops for each option route and sends to frontend'''
 
-    googleRequest = requests.get('https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=transit&transit_mode=bus&key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU')
+    # origin = request.POST['origin']
+    # destination = request.POST['destination']
+    #
+    # googleRequest = requests.get('https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=transit&transit_mode=bus&key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU')
+    #
+    # response = googleRequest.json()
 
-    response = googleRequest.json()
+    response = json.loads(request.POST['googleRequest'])
 
-    def get_middle(response, step):
+    def get_middle(response, step, option):
         sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
         where stops.stop_id = stoptimes_filtered.stop_id and db_data.stoptimes_filtered.bus_line=%s
         and db_data.stoptimes_filtered.stop_headsign=%s and (stop_name LIKE %s or stop_name LIKE %s) '''
@@ -45,11 +50,11 @@ def search_route(request):
                              passwd="A0206304131z",  # password
                              db="db_data")  # name of the database
 
-        stop_names1 = '%'+ response['routes'][0]['legs'][0]['steps'][step]['transit_details']['departure_stop']['name'] + '%'
-        stop_names2 = '%'+ response['routes'][0]['legs'][0]['steps'][step]['transit_details']['arrival_stop']['name'] + '%'
-        line_selected = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['line']['short_name']
-        headsign_selected = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['headsign']
-        number_stops = response['routes'][0]['legs'][0]['steps'][step]['transit_details']['num_stops']
+        stop_names1 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['name'] + '%'
+        stop_names2 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['name'] + '%'
+        line_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['line']['short_name']
+        headsign_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['headsign']
+        number_stops = response['routes'][option]['legs'][0]['steps'][step]['transit']['num_stops']
 
         cursor = db.cursor()
         cursor.execute(sql, (line_selected, headsign_selected, stop_names1, stop_names2))
@@ -104,16 +109,22 @@ def search_route(request):
         return result
 
     middle_stops = []
-    for i in range(0, len(response['routes'][0]['legs'][0]['steps'])):
-        if response['routes'][0]['legs'][0]['steps'][i]['travel_mode'] == 'TRANSIT':
-            try:
-                middle_stops.append(get_middle(response, i))
-            except:
-                middle_stops.append('error: could not find intermediate stops for this route')
+    for k in range(0, len(response['routes'])):
+        middle_stops.append([])
+        for i in range(0, len(response['routes'][k]['legs'][0]['steps'])):
+            if response['routes'][k]['legs'][0]['steps'][i]['travel_mode'] == 'TRANSIT':
+                try:
+                    middle_stops[k].append(get_middle(response, i, k))
+                except:
+                    middle_stops[k].append('error: could not find intermediate stops for this route')
 
-    return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
+    # return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
+    return HttpResponse(json.dumps({'middle_stops':middle_stops}))
+
 
 def show_route(request):
+    ''' Get all stops of a given bus line for a specific headsign and sends back to frontend'''
+
     bus_line = request.POST['bus_line']
     # print(bus_line)
     input = bus_line.split(' ', 1)
