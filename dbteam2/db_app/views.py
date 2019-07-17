@@ -39,6 +39,8 @@ def search_route(request):
     # response = googleRequest.json()
 
     response = json.loads(request.POST['googleRequest'])
+    start_time = request.POST['start_time']
+    print(start_time)
 
     def get_middle(response, step, option):
         sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
