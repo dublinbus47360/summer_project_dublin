@@ -19,7 +19,11 @@
         </header>
       </div>
       <div id="main_section" class="row">
-        <div id="map" class="col-md-9 "></div>
+        <div id="route" class="d-none">
+          <span>Route</span>
+          <select id="route_options"></select>
+        </div>
+        <div id="map" class="col-md-9"></div>
         <div id="form" class="col-md-3 d-none d-md-block">
           <div class="row form_header">
             <h4>Travel Time Predictor</h4>
@@ -32,12 +36,12 @@
           </div>
           <div class="row input">
             <select id="date">
-              <option value="Null" selected>Enter Date</option>
+              <option value="Null" selected>Enter Date (optional)</option>
             </select>
           </div>
           <div class="row input">
             <select id="time">
-              <option value="Null" selected>Enter time</option>
+              <option value="Null" selected>Enter Time (optional)</option>
             </select>
           </div>
           <div class="row input">
@@ -104,6 +108,9 @@
           </div>
         </div>
       </div>
+    <!-- </div>
+    <div id="panel"> -->
+
     </div>
 
     <script type="text/javascript">
@@ -216,6 +223,12 @@
       // Call google API to get all stops of a given route and display them on the page
       function showRoute() {
         var bus_line = document.getElementById('bus_line').value;
+
+        if (bus_line == 'Null') {
+          window.alert('Please select a bus line.');
+          return;
+        }
+
         $.ajax({
           type: "POST",
           url: "{{ 'show_route/' }}",
@@ -261,6 +274,7 @@
             }
           }
         })
+        $("#route").addClass("d-none");
         document.getElementById('events').innerHTML = events_content;
         document.getElementById('bottom_title').innerHTML = 'Events';
         if (media_query.matches) {
@@ -286,11 +300,6 @@
         var origin = document.getElementById("originInput");
         var autocomplete = new google.maps.places.Autocomplete(origin);
         autocomplete.setComponentRestrictions({'country': ['ie']});
-        google.maps.event.addListener(autocomplete, "place_changed", function() {
-          var place = autocomplete.getPlace();
-          var latOrigin = place.geometry.location.lat();
-          var lngOrigin = place.geometry.location.lng();
-        })
       }
 
       // Set autocomplete to get the destination
@@ -298,18 +307,45 @@
         var destination = document.getElementById("destinationInput");
         var autocomplete = new google.maps.places.Autocomplete(destination);
         autocomplete.setComponentRestrictions({'country': ['ie']});
-        google.maps.event.addListener(autocomplete, "place_changed", function() {
-          var place = autocomplete.getPlace();
-          var latDestination = place.geometry.location.lat();
-          var lngdestination = place.geometry.location.lng();
-        })
       }
 
       // Call google API to get route options and display the optimal one on the page
       function searchRoute() {
         var origin = document.getElementById("originInput").value;
         var destination = document.getElementById("destinationInput").value;
+
+        if (!origin || !destination) {
+          window.alert('Please enter valid origin and destination.');
+          return;
+        }
+
         var middle_stops;
+        var selected_date = document.getElementById('date').value;
+        var selected_time = document.getElementById('time').value;
+        var now = new Date();
+        var startTime;
+        if (selected_date == 'Null' && selected_time == 'Null') {
+          startTime = now;
+        } else if (selected_date == 'Null') {
+          startTime = now;
+          var hour = parseInt(selected_time.slice(0, 2));
+          var min = parseInt(selected_time.slice(3, 5));
+          startTime.setHours(hour);
+          startTime.setMinutes(min);
+        } else if (selected_time == 'Null') {
+          startTime = now;
+          var year = parseInt(selected_date.slice(0, 4));
+          var month = parseInt(selected_date.slice(5, 7))-1;
+          var day = parseInt(selected_date.slice(8, 10));
+          startTime.setFullYear(year, month, day);
+        } else {
+          var year = parseInt(selected_date.slice(0, 4));
+          var month = parseInt(selected_date.slice(5, 7))-1;
+          var day = parseInt(selected_date.slice(8, 10));
+          var hour = parseInt(selected_time.slice(0, 2));
+          var min = parseInt(selected_time.slice(3, 5));
+          startTime = new Date(year, month, day, hour, min);
+        }
 
         var directionsDisplay = new google.maps.DirectionsRenderer;
         var directionsService = new google.maps.DirectionsService;
@@ -328,9 +364,10 @@
           origin: origin,
           destination: destination,
           travelMode: google.maps.TravelMode['TRANSIT'],
-          transitOptions: {modes: ['BUS']}
-          ,provideRouteAlternatives: true
+          transitOptions: {modes: ['BUS'], departureTime: startTime},
+          provideRouteAlternatives: true
         }, function(response, status) {
+          // console.log(startTime);
           if (status == 'OK') {
             console.log(response);
             var googleRequest = response;
@@ -338,20 +375,52 @@
             $.ajax({
               type: "POST",
               url: "{{ 'search_route/' }}",
-              data: { csrfmiddlewaretoken: '{{ csrf_token }}', googleRequest: JSON.stringify(response) },
+              data: { csrfmiddlewaretoken: '{{ csrf_token }}', googleRequest: JSON.stringify(response), start_time: startTime },
               success: function(response) {
                 var myData = JSON.parse(response);
                 console.log(myData);
                 middle_stops = myData.middle_stops;
                 displayIntermediate(middle_stops[0]);
                 displayJourneyInfo(googleRequest, 0);
-                directionsDisplay.setRouteIndex(2);
-                displayIntermediate(middle_stops[2]);
-                displayJourneyInfo(googleRequest, 2);
+                document.getElementById('route_options').innerHTML='';
+                var optionsArray = [];
+                for (var i = 0; i < googleRequest.routes.length; i++) {
+                  var steps = googleRequest.routes[i].legs[0].steps;
+                  var option_title = '';
+                  for (var k = 0; k < steps.length; k++) {
+                    if (steps[k].travel_mode == 'TRANSIT') {
+                      option_title += steps[k].transit.line.short_name;
+                      option_title += ' / ';
+                    }
+                  }
+                  if (option_title == '') {
+                    option_title += 'Walking';
+                  } else {
+                    option_title = option_title.slice(0, -3);
+                  }
+
+                  if (!optionsArray.includes(option_title)) {
+                    document.getElementById('route_options').innerHTML+='<option value="' + i + '">' + option_title + '</option>';
+                    optionsArray.push(option_title);
+                  }
+                }
+                var route_select = document.getElementById('route_options');
+                route_select.onchange = function() {
+                  while(markersArray.length) {
+                    markersArray.pop().setMap(null);
+                  }
+                  directionsDisplay.setRouteIndex(parseInt(route_select.value));
+                  displayIntermediate(middle_stops[parseInt(route_select.value)]);
+                  displayJourneyInfo(googleRequest, parseInt(route_select.value));
+                }
+                $("#route").removeClass("d-none");
+                // directionsDisplay.setPanel(document.getElementById('panel'));
+                // console.log(directionsDisplay.getPanel());
               }
             })
 
             // Display intermediate bus stops for a given route option
+            var markersArray = [];
             function displayIntermediate(middle_stops) {
               for (var i = 0; i < middle_stops.length; i++) {
                 if (typeof middle_stops[i] != 'string') {
@@ -370,6 +439,7 @@
                     stop_name: middle_stops[i][j][6]
                     });
 
+                    markersArray.push(marker);
                     popupDirections(marker);
                   }
                 }
@@ -409,7 +479,16 @@
               document.getElementById('bottom_title').innerHTML = 'Journey';
               document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered distance_time"></i> '+googleRequest.routes[option].legs[0].distance.text+'</span><span><i class="fas fa-stopwatch distance_time"></i> '+googleRequest.routes[option].legs[0].duration.text+'</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="event"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span>Weather Forecast - Rain</span><span>CO2 Emission - 0.0 tonnes</span></div></div></div>';
               if (media_query.matches) {
-                document.getElementById('bottom_title').click();
+                if (toggle_count2 == 0) {
+                  document.getElementById('bottom_button').click();
+                } else {
+                  $("#event1").removeClass("d-none");
+                  $("#event1").removeClass("d-md-block");
+                  $("#event2").removeClass("d-none");
+                  $("#event2").removeClass("d-md-block");
+                  $("#event3").removeClass("d-none");
+                  $("#event3").removeClass("d-md-block");
+                }
               }
             }
           } else {
