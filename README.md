@@ -20,3 +20,6 @@ Users should be able to interact with the system via a web-based interface which
 mobile devices. When presented with any bus route, an origin stop and a destination stop, a time, a
 day of the week, current weather, the system should produce and display via the interface an
 accurate estimate of travel time for the selected journey
+
+
+with Django, Jupyter, random forest etc.
