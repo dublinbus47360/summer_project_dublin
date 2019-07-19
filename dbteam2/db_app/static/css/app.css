@@ -1,25 +1,38 @@
+main {
+  box-sizing: border-box;
+}
+
 header {
-  height: 15vh;
+  height: 13vh;
   border-bottom: 2px solid black;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+header h1 {
+  margin: 0;
+}
+
+#logo {
+  width: 60px;
+  height: 60px;
+  margin-right: 20px;
+}
+
 #map {
-  height: 70vh;
+  height: 72vh;
 }
 
 #form {
   background-color: #e6e6e8;
 }
 
-#form_header h4 {
+.form_header h4 {
   font-size: 1.2em;
-  text-align: center;
 }
 
-.input, #form_header {
+.input, .form_header {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -67,11 +80,35 @@ header {
 .event_date span {
   display: block;
   text-align: center;
-
 }
 
 .event_info {
   margin-left: 30px;
+}
+
+.event_info p {
+  margin-bottom: 5px;
+}
+
+.journey_steps {
+  max-height: 105px;
+  overflow: scroll;
+  padding-right: 20px;
+}
+
+.journey_step {
+  margin-bottom: 4px;
+}
+
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: rgba(0,0,0,.5);
+  -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
 }
 
 .event_info span {
@@ -79,8 +116,17 @@ header {
   text-align: left;
 }
 
+.journey_step span {
+  display: inline;
+  color: #a2a1a2;
+}
+
 .grey_text {
   color: grey;
+}
+
+#journey {
+  display: none;
 }
 
 body {
@@ -99,7 +145,7 @@ body {
 
 #bottom_button {
   height: 100%;
-  width: 50%;
+  width: 100%;
   background-color: white;
   border-top: 1px solid black;
   border-right: 1px solid black;
@@ -112,10 +158,55 @@ body {
   margin-top: 5px;
 }
 
+.step_arrow {
+  margin: 0 5px;
+  color: #a2a1a2;
+}
+
+.distance_time {
+  color: #a2a1a2;
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+
+#main_section {
+  position: relative;
+}
+
+#route {
+  position: absolute;
+  z-index: 9;
+  left: 9px;
+  top: 60px;
+  background-color: white;
+  padding: 9px;
+  border: 1px solid #dedcde;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  color: black;
+}
+
+#route_options {
+  margin-left: 10px;
+  color: white;
+  background-color: #9a9d9a;
+  text-align-last: center;
+  font-size: 0.9em;
+}
+
 @media screen and (max-width: 767px) {
   header {
     height: 10vh;
     position: relative;
+    justify-content: flex-start;
+  }
+
+  header h1 {
+    font-size: 1.7em;
+  }
+
+  #logo {
+    width: 40px;
+    height: 40px;
   }
 
   header button {
@@ -142,8 +233,9 @@ body {
   #form {
     position: absolute;
     right: 0;
-    top: 10vh;
+    top: 0;
     width: 60vw;
+    z-index: 10;
   }
 
   .event {
@@ -151,15 +243,15 @@ body {
   }
 
   .event_date {
-    width: 20%;
+    width: 17%;
   }
 
   .event_info {
-    width: 80%;
+    width: 83%;
   }
 
   .event_date span {
-    text-align: right;
+    text-align: center;
   }
 
   #events {
@@ -167,5 +259,11 @@ body {
     height: 45vh;
     top: 55vh;
     background-color: white;
+    margin: 0;
+    left: 0px;
+  }
+
+  #event2 {
+    max-height: 110px;
   }
 }

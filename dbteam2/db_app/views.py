@@ -26,7 +26,7 @@ def main_page(request):
     # print(bus_lines)
 
     # return render(request, 'db_app/main_page.html', {'data': json.dumps(data)})
-    return render(request, 'db_app/main_page_styled3.html', {'apikey': 'AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU', 'bus_lines': json.dumps(bus_lines)})
+    return render(request, 'db_app/main_page.html', {'bus_lines': json.dumps(bus_lines)})
 
 def search_route(request):
     ''' Gets the intermediate stops for each option route and sends to frontend'''
@@ -40,7 +40,32 @@ def search_route(request):
 
     response = json.loads(request.POST['googleRequest'])
     start_time = request.POST['start_time']
-    print(start_time)
+    selected_hour = int(start_time[11:13])
+    for i in range(0,3):
+        if ((selected_hour + i) % 3) == 0:
+            hourForWeather = selected_hour + i
+            break
+
+    timeForWeather = ('0' + str(hourForWeather) + ':00:00')[-8:]
+    datetimeForWeather = start_time[:11] + timeForWeather
+
+    # print(timeForWeather)
+    # print(datetimeForWeather)
+
+    openWeatherCall = requests.get('http://api.openweathermap.org/data/2.5/forecast?id=7778677&APPID=a4822db1b5634c2e9e25209d1837cc69&units=metric')
+
+    allForecast = openWeatherCall.json()
+
+    isTimeInvalid = True
+    for i in range(len(allForecast['list'])):
+        if allForecast['list'][i]['dt_txt'] == datetimeForWeather:
+            journey_forecast = allForecast['list'][i]['weather'][0]['main']
+            print(journey_forecast)
+            isTimeInvalid = False
+            break
+
+    if isTimeInvalid:
+        return HttpResponse('invalid_time')
 
     def get_middle(response, step, option):
         sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
@@ -82,7 +107,7 @@ def search_route(request):
         cursor.execute(sql, (headsign_selected,line_selected,stop1,stop2))
         startend_stops = cursor.fetchall()
 
-        print(startend_stops)
+        # print(startend_stops)
 
         if len(startend_stops) == 2:
             startend_sequence = [startend_stops[0][0], min(startend_stops[0][2], startend_stops[1][2]), max(startend_stops[0][2], startend_stops[1][2])]
@@ -105,8 +130,8 @@ def search_route(request):
         result = cursor.fetchall()
         db.close()
 
-        for i in result:
-            print(i)
+        # for i in result:
+            # print(i)
 
         return result
 
@@ -121,7 +146,7 @@ def search_route(request):
                     middle_stops[k].append('error: could not find intermediate stops for this route')
 
     # return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
-    return HttpResponse(json.dumps({'middle_stops':middle_stops}))
+    return HttpResponse(json.dumps({'middle_stops':middle_stops, 'journey_forecast':journey_forecast}))
 
 
 def show_route(request):
