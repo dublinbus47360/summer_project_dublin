@@ -174,3 +174,29 @@ def show_route(request):
     result = cur.fetchall()
 
     return HttpResponse(json.dumps({'route_stops':result}))
+
+def get_events(request):
+
+    today = request.POST['today']
+    # print(today)
+    lastDay = request.POST['lastDay']
+    # print(lastDay)
+
+    eventsRequest = requests.get('https://app.ticketmaster.com/discovery/v2/events?apikey=s8Vo7MFmiNpCFn3fPl9Nq4KVG7jZH5pj&locale=*&startDateTime='+today+'T08:00:00Z&endDateTime='+lastDay+'T08:00:00Z&size=20&page=0&sort=date,asc&city=Dublin&countryCode=IE&includeTest=no')
+
+    eventsResponse = eventsRequest.json()
+
+    eventsList = []
+    count = 0
+    for event in eventsResponse['_embedded']['events']:
+        try:
+            eventsList.append([event['name'], event['dates']['start']['localDate'], event['dates']['start']['localTime'], event['_embedded']['venues'][0]['name'], event['_embedded']['venues'][0]['location']])
+            count += 1
+            if count > 11:
+                break
+        except Exception as e:
+            pass
+
+    print(eventsList)
+
+    return HttpResponse(json.dumps({'eventsResponse':eventsList}))
