@@ -4,7 +4,12 @@ from django.http import HttpResponse
 
 # Create your views here.
 def main_page(request):
-    ''' First view to be executed. Renders the mainpage html sending 2 pieces of data to frontend (google api key; list of all distinct bus lines and respective headsigns)'''
+    ''' First view to be executed, renders the mainpage html'''
+
+    return render(request, 'db_app/main_page.html', {})
+
+def get_busLines(request):
+    '''Gets the list of all bus lines and respective headsigns'''
 
     host='127.0.0.1'
     user = 'root'
@@ -25,29 +30,53 @@ def main_page(request):
         bus_lines.append(i)
     # print(bus_lines)
 
-    # return render(request, 'db_app/main_page.html', {'data': json.dumps(data)})
-    return render(request, 'db_app/main_page.html', {'bus_lines': json.dumps(bus_lines)})
+    return HttpResponse(json.dumps({'bus_lines': bus_lines}))
 
 def search_route(request):
     ''' Gets the intermediate stops for each option route and sends to frontend'''
 
-    # origin = request.POST['origin']
-    # destination = request.POST['destination']
-    #
-    # googleRequest = requests.get('https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination + '&mode=transit&transit_mode=bus&key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU')
-    #
-    # response = googleRequest.json()
-
     response = json.loads(request.POST['googleRequest'])
     start_time = request.POST['start_time']
     selected_hour = int(start_time[11:13])
-    for i in range(0,3):
-        if ((selected_hour + i) % 3) == 0:
-            hourForWeather = selected_hour + i
-            break
+    if (selected_hour > 20):
+        hourForWeather = 0
+        isLate = True
+    else:
+        for i in range(0,3):
+            if ((selected_hour + i) % 3) == 0:
+                hourForWeather = selected_hour + i
+                isLate = False
+                break
 
-    timeForWeather = ('0' + str(hourForWeather) + ':00:00')[-8:]
-    datetimeForWeather = start_time[:11] + timeForWeather
+    if isLate:
+        timeForWeather = ('0' + str(hourForWeather) + ':00:00')[-8:]
+        today = start_time[8:10]
+        if start_time[5:7] in ['04', '06', '09', '11']:
+            if today == '30':
+                month = int(start_time[5:7]) + 1
+                tomorrow = ('0' + str(month))[-2:] + '-01'
+                datetimeForWeather = start_time[:5] + tomorrow + ' ' + timeForWeather
+            else:
+                tomorrow = int(today)+1
+                datetimeForWeather = start_time[:8] + ('0' + str(tomorrow))[-2:] + ' ' + timeForWeather
+        elif start_time[5:7] == '02':
+            if today == '28':
+                tomorrow = '03-01'
+                datetimeForWeather = start_time[:5] + tomorrow + ' ' + timeForWeather
+            else:
+                tomorrow = int(today)+1
+                datetimeForWeather = start_time[:8] + ('0' + str(tomorrow))[-2:] + ' ' + timeForWeather
+        else:
+            if today == '31':
+                month = int(start_time[5:7]) + 1
+                tomorrow = ('0' + str(month))[-2:] + '-01'
+                datetimeForWeather = start_time[:5] + tomorrow + ' ' + timeForWeather
+            else:
+                tomorrow = int(today)+1
+                datetimeForWeather = start_time[:8] + ('0' + str(tomorrow))[-2:] + ' ' + timeForWeather
+    else:
+        timeForWeather = ('0' + str(hourForWeather) + ':00:00')[-8:]
+        datetimeForWeather = start_time[:11] + timeForWeather
 
     # print(timeForWeather)
     # print(datetimeForWeather)
@@ -145,6 +174,34 @@ def search_route(request):
                 except:
                     middle_stops[k].append('error: could not find intermediate stops for this route')
 
+    # Calling the model
+    import pickle, os
+    script_directory = os.path.dirname(__file__)
+    pickle_directory = 'static/db_app/pickle/jan_46A.pickle'
+    pickle_path = os.path.join(script_directory, pickle_directory)
+    # random_forest = pickle.load(open(pickle_path,'rb'))
+    # predict_request =[[18,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[19,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[20,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[21,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[22,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[23,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[24,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[25,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    # predict_request =[[26,2061,53792,0,1,0,0,0,0,0]]
+    # prediction = random_forest.predict(predict_request)
+    #
+    # print(prediction)
+
+
     # return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
     return HttpResponse(json.dumps({'middle_stops':middle_stops, 'journey_forecast':journey_forecast}))
 
@@ -190,13 +247,14 @@ def get_events(request):
     count = 0
     for event in eventsResponse['_embedded']['events']:
         try:
-            eventsList.append([event['name'], event['dates']['start']['localDate'], event['dates']['start']['localTime'], event['_embedded']['venues'][0]['name'], event['_embedded']['venues'][0]['location']])
-            count += 1
+            if event['_embedded']['venues'][0]['name'] != 'The Punchline':
+                eventsList.append([event['name'], event['dates']['start']['localDate'], event['dates']['start']['localTime'], event['_embedded']['venues'][0]['name'], event['_embedded']['venues'][0]['location']])
+                count += 1
             if count > 11:
                 break
         except Exception as e:
             pass
 
-    print(eventsList)
-
+    # print(eventsList)
+    
     return HttpResponse(json.dumps({'eventsResponse':eventsList}))

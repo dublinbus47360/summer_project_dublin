@@ -7,8 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'db_app/fontawesome/css/all.css' %}">
+    <link  href="{% static 'db_app/pickerjs/picker.css' %}" rel="stylesheet">
+    <script src="{% static 'db_app/pickerjs/picker.js' %}"></script>
     <link rel="stylesheet" href="{% static 'db_app/css/app.css' %}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
   </head>
   <body>
     <div class="container-fluid">
@@ -22,6 +23,12 @@
         <div id="route" class="d-none">
           <span>Route</span>
           <select id="route_options"></select>
+        </div>
+        <div id="filterEvent" onclick="toggleEventMarkers()">
+          <i class="fas fa-map-marker-alt" style="font-size:15px; color: #22e866;"></i><span>Events</span>
+        </div>
+        <div id="filterTourism" onclick="toggleTourismMarkers()">
+          <i class="fas fa-map-marker-alt" style="font-size:15px; color: #ee19b9;"></i><span>Tourism</span>
         </div>
         <div id="map" class="col-md-9"></div>
         <div id="form" class="col-md-3 d-none d-md-block">
@@ -40,9 +47,10 @@
             </select>
           </div>
           <div class="row input">
-            <select id="time">
+            <!-- <select id="time">
               <option value="Null" selected>Enter Time (optional)</option>
-            </select>
+            </select> -->
+            <input type="text" id="time" value="Enter Time (optional)">
           </div>
           <div class="row input">
             <input id="submit" type="submit" class="form-control font-weight-bold align-middle" value="Go!" onclick="searchRoute()">
@@ -67,69 +75,19 @@
           </div>
         </div>
       </div>
-      <div id="events" class="row">
-        <!-- <div id="event1" class="col-md d-none d-md-block">
-          <div class="event">
-            <div class="event_date">
-              <span class="grey_text">JUN</span>
-              <span>12</span>
-            </div>
-            <div class="event_info">
-              <span class="grey_text">Thu - 18:00</span>
-              <span>Fleetwood Mac</span>
-              <span class="grey_text">RDS Arena - Dublin</span>
-            </div>
-          </div>
-        </div>
-        <div id="event2" class="col-md d-none d-md-block">
-          <div class="event">
-            <div class="event_date">
-              <span class="grey_text">JUN</span>
-              <span>14</span>
-            </div>
-            <div class="event_info">
-              <span class="grey_text">Fri - 17:00</span>
-              <span>Mumford & Sons</span>
-              <span class="grey_text">Malahide Castle - Co. Dublin</span>
-            </div>
-          </div>
-        </div>
-        <div id="event3" class="col-md d-none d-md-block">
-          <div class="event">
-            <div class="event_date">
-              <span class="grey_text">JUN</span>
-              <span>15</span>
-            </div>
-            <div class="event_info">
-              <span class="grey_text">Sat - 18:00</span>
-              <span>Bon Jovi: This House Is Not for Sale</span>
-              <span class="grey_text">RDS Arena - Dublin</span>
-            </div>
-          </div>
-        </div> -->
-      </div>
+      <div id="events" class="row"></div>
 
     </div>
 
     <script type="text/javascript">
-
-      // First map rendered when the page is loaded
-      function myMap() {
-        var myCenter = {lat: 53.349605, lng:-6.264175 };
-        var mapCanvas = document.getElementById("map");
-        var mapOptions = {center: myCenter, zoom: 11};
-        var map = new google.maps.Map(mapCanvas, mapOptions);
-        infowindow = new google.maps.InfoWindow({
-          maxWidth: 355
-        });
-      }
-
-      // Create the options for the Bus Lines select tag
-      var bus_lines = JSON.parse("{{ bus_lines }}".replace(/&quot;/g,"\""));
-
-      for (var i=0; i<bus_lines.length; i++) {
-        document.getElementById('bus_line').innerHTML += '<option>' + bus_lines[i][0] + ' (' + bus_lines[i][1] + ')</option>';
-      }
+      var time_input = document.getElementById('time');
+      var picker = new Picker(time_input, {
+        format: 'HH:mm',
+        headers: true,
+        text: {title: 'Pick a time'},
+        rows: 3,
+        controls: true
+      });
 
       // Change layout to mobile screen size
       function toMobile(media_query) {
@@ -152,9 +110,14 @@
 
     </script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU&callback=myMap&libraries=places"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script type="text/javascript" src="{% static 'db_app/js/tourist_locations.js' %}"></script>
 
     <script type="text/javascript" src="{% static 'db_app/js/app.js' %}"></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU&callback=myMap&libraries=places"></script>
+
 
   </body>
 </html>
