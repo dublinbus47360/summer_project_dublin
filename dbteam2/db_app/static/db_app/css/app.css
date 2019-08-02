@@ -261,6 +261,10 @@ body {
   text-decoration: underline;
 }
 
+#forecastSpan {
+  margin-bottom: 5px;
+}
+
 @media screen and (max-width: 767px) {
   header {
     height: 10vh;

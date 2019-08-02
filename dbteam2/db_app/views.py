@@ -37,6 +37,9 @@ def search_route(request):
 
     response = json.loads(request.POST['googleRequest'])
     start_time = request.POST['start_time']
+    week_day = int(request.POST['weekDay'])
+    print('weekday is ' + str(week_day))
+
     selected_hour = int(start_time[11:13])
     if (selected_hour > 20):
         hourForWeather = 0
@@ -88,52 +91,70 @@ def search_route(request):
     isTimeInvalid = True
     for i in range(len(allForecast['list'])):
         if allForecast['list'][i]['dt_txt'] == datetimeForWeather:
-            journey_forecast = allForecast['list'][i]['weather'][0]['main']
-            print(journey_forecast)
+            journey_forecast = str(int(allForecast['list'][i]['main']['temp'])) + '˚ - ' + allForecast['list'][i]['weather'][0]['main']
+            # print(journey_forecast)
             isTimeInvalid = False
             break
 
     if isTimeInvalid:
         return HttpResponse('invalid_time')
 
+
+    stops_info = [0,0,0,0]
+
     def get_middle(response, step, option):
-        sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
-        where stops.stop_id = stoptimes_filtered.stop_id and db_data.stoptimes_filtered.bus_line=%s
-        and db_data.stoptimes_filtered.stop_headsign=%s and (stop_name LIKE %s or stop_name LIKE %s) '''
 
-        db = pymysql.connect(host="127.0.0.1",  # your host
-                             user="root",  # username
-                             passwd="A0206304131z",  # password
-                             db="db_data")  # name of the database
+        try:
+            sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
+            where stops.stop_id = stoptimes_filtered.stop_id and db_data.stoptimes_filtered.bus_line=%s
+            and db_data.stoptimes_filtered.stop_headsign=%s and (stop_lat between %s and %s) and (stop_lon between %s and %s)'''
 
-        stop_names1 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['name'] + '%'
-        stop_names2 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['name'] + '%'
-        line_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['line']['short_name']
-        headsign_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['headsign']
-        number_stops = response['routes'][option]['legs'][0]['steps'][step]['transit']['num_stops']
+            db = pymysql.connect(host="127.0.0.1",  # your host
+                                 user="root",  # username
+                                 passwd="A0206304131z",  # password
+                                 db="db_data")  # name of the database
 
-        cursor = db.cursor()
-        cursor.execute(sql, (line_selected, headsign_selected, stop_names1, stop_names2))
-        possible_stops = cursor.fetchall()
+            stop_names1 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['name'] + '%'
+            stop_names2 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['name'] + '%'
+            line_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['line']['short_name']
+            headsign_selected = response['routes'][option]['legs'][0]['steps'][step]['transit']['headsign']
+            number_stops = response['routes'][option]['legs'][0]['steps'][step]['transit']['num_stops']
+            stoplat1 = response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['location']['lat']
+            stoplon1 = response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['location']['lng']
+            stoplat2 = response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['location']['lat']
+            stoplon2 = response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['location']['lng']
 
-        if possible_stops[0][2]+possible_stops[0][3] != possible_stops[1][2]+possible_stops[1][3]:
-            stop1 = possible_stops[0][2]
-            stop2 = possible_stops[1][2]
-        else:
-            for i in range(1,len(possible_stops)):
-                if possible_stops[0][2]+possible_stops[0][3] != possible_stops[i][2]+possible_stops[i][3]:
-                    stop1 = possible_stops[0][2]
-                    stop2 = possible_stops[i][2]
-                    break
-                else:
-                    return 'error: possible stops doesnt match'
+            # print('route: ' + line_selected)
+            # print(stoplat1, stoplon1, stoplat2, stoplon2)
+
+            cursor = db.cursor()
+            cursor.execute(sql, (line_selected, headsign_selected, stoplat1 -0.001, stoplat1 +0.001, stoplon1 -0.001, stoplon1 +0.001))
+            start_stop = cursor.fetchall()
+            if len(start_stop) == 0:
+                cursor.execute(sql, (line_selected, headsign_selected, stoplat1 -0.003, stoplat1 +0.003, stoplon1 -0.003, stoplon1 +0.003))
+                start_stop = cursor.fetchall()
+
+            cursor.execute(sql, (line_selected, headsign_selected, stoplat2 -0.001, stoplat2 +0.001, stoplon2 -0.001, stoplon2 +0.001))
+            end_stop = cursor.fetchall()
+            if len(end_stop) == 0:
+                cursor.execute(sql, (line_selected, headsign_selected, stoplat2 -0.003, stoplat2 +0.003, stoplon2 -0.003, stoplon2 +0.003))
+                end_stop = cursor.fetchall()
+
+            possible_stops = [start_stop[0], end_stop[0]]
+            # print(possible_stops)
+            stops_info[0] = int((start_stop[0][2])[-4:])
+            stops_info[2] = int((end_stop[0][2])[-4:])
+
+        except Exception as e:
+            return 'error: could not find possible stops'
+
 
         sql = '''select db_data.stoptimes_filtered.trip_id, db_data.stoptimes_filtered.bus_line, db_data.stoptimes_filtered.stop_sequence, db_data.stoptimes_filtered.stop_headsign
         from db_data.stoptimes_filtered
         where stoptimes_filtered.stop_headsign=%s and stoptimes_filtered.bus_line=%s and (stop_id=%s or stop_id=%s)'''
 
         cursor = db.cursor()
-        cursor.execute(sql, (headsign_selected,line_selected,stop1,stop2))
+        cursor.execute(sql, (headsign_selected,line_selected,start_stop[0][2],end_stop[0][2]))
         startend_stops = cursor.fetchall()
 
         # print(startend_stops)
@@ -148,6 +169,11 @@ def search_route(request):
                 else:
                     return 'error: startend stops doesnt match'
 
+        # print(startend_sequence)
+        stops_info[1] = startend_sequence[1]
+        stops_info[3] = startend_sequence[2]
+        # print(stops_info)
+
         sql = '''select stops.stop_id, stop_sequence, stop_headsign, bus_line, stop_lat, stop_lon, stop_name
                 from db_data.stoptimes_filtered, db_data.stops
                 where stops.stop_id = stoptimes_filtered.stop_id and stoptimes_filtered.stop_headsign =%s
@@ -160,50 +186,78 @@ def search_route(request):
         db.close()
 
         # for i in result:
-            # print(i)
+        #     print(i)
 
         return result
 
+    # Calling the model
+    import pickle, os
+    script_directory = os.path.dirname(__file__)
+    pickle_directory = 'static/db_app/pickle/'
+
     middle_stops = []
+    pickle_list = ['150', '42', '130', '120', '46A', '14', '54A', '16', '66', '37', '15A', '4', '145', '68A', '49', '40', '70', '38A', '83', '27', '66B', '79', '122', '40D', '9', '11', '140', '1', '47', '38', '25B', '15', '29A', '66A', '65', '7', '39A', '41', '15B', '77A', '83A', '27B', '25A', '40B', '151', '123', '32', '43', '27X', '84', '79A', '44', '39', '33X', '14C', '84A', '27A', '65B', '41C', '31A', '31', '13', '69', '7A', '40E', '25', '53', '61', '68', '26', '56A', '7D', '67', '33', '66X', '38B', '67X', '116', '16C', '44B', '38D', '31B', '41B', '25D', '32X', '51D', '16D', '46E', '84X', '7B', '69X', '15D', '41X', '142', '68X', '25X', '39X', '41D', '51X', '77X', '118', '33E']
+    prediction_list = []
+
+    def run_pickle(line, inputs):
+        pickle_path = os.path.join(script_directory, pickle_directory + line + '.pickle')
+        random_forest = pickle.load(open(pickle_path,'rb'))
+        try:
+            prediction = random_forest.predict(inputs)
+        except:
+            inputs[0].pop()
+            inputs[0].pop(3)
+            prediction = random_forest.predict(inputs)
+        # print(prediction)
+        hour_predicted = int(prediction[0] // 3600)
+        min_predicted = int((prediction[0] % 3600) // 60)
+        time_predicted = ('0' + str(hour_predicted))[-2:] + ':' + ('0' + str(min_predicted))[-2:]
+        return time_predicted
+
     for k in range(0, len(response['routes'])):
         middle_stops.append([])
+        prediction_list.append([])
+        haveData = True
+        for i in range(0, len(response['routes'][k]['legs'][0]['steps'])):
+            if response['routes'][k]['legs'][0]['steps'][i]['travel_mode'] == 'TRANSIT':
+                line = response['routes'][k]['legs'][0]['steps'][i]['transit']['line']['short_name']
+                if line not in pickle_list:
+                    haveData = False
+                    # print('no model for line ' + line)
+                    break
+
         for i in range(0, len(response['routes'][k]['legs'][0]['steps'])):
             if response['routes'][k]['legs'][0]['steps'][i]['travel_mode'] == 'TRANSIT':
                 try:
                     middle_stops[k].append(get_middle(response, i, k))
                 except:
                     middle_stops[k].append('error: could not find intermediate stops for this route')
+                this_step = response['routes'][k]['legs'][0]['steps'][i]
+                line = this_step['transit']['line']['short_name']
+                if (haveData == True):
+                    # print('we have data for ' + line)
+                    dep_time = this_step['transit']['departure_time']['text']
+                    arr_time = this_step['transit']['arrival_time']['text']
+                    dep_time = (int(dep_time[0:2]) * 3600) + (int(dep_time[-2:]) * 60)
+                    arr_time = (int(arr_time[0:2]) * 3600) + (int(arr_time[-2:]) * 60)
+                    model_request = [[0,0,0,0,0,0,0]]
+                    model_request[0][week_day] = 1
+                    model_request[0].insert(0, dep_time)
+                    model_request[0].insert(0, stops_info[0])
+                    model_request[0].insert(0, stops_info[1])
+                    # print(model_request)
+                    prediction_list[k].append(run_pickle(line, model_request))
+                    model_request = [[0,0,0,0,0,0,0]]
+                    model_request[0][week_day] = 1
+                    model_request[0].insert(0, arr_time)
+                    model_request[0].insert(0, stops_info[2])
+                    model_request[0].insert(0, stops_info[3])
+                    # print(model_request)
+                    prediction_list[k].append(run_pickle(line, model_request))
 
-    # Calling the model
-    import pickle, os
-    script_directory = os.path.dirname(__file__)
-    pickle_directory = 'static/db_app/pickle/jan_46A.pickle'
-    pickle_path = os.path.join(script_directory, pickle_directory)
-    # random_forest = pickle.load(open(pickle_path,'rb'))
-    # predict_request =[[18,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[19,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[20,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[21,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[22,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[23,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[24,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[25,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    # predict_request =[[26,2061,53792,0,1,0,0,0,0,0]]
-    # prediction = random_forest.predict(predict_request)
-    #
-    # print(prediction)
-
-
+    # print(prediction_list)
     # return HttpResponse(json.dumps({'googleRequest':response, 'middle_stops':middle_stops}))
-    return HttpResponse(json.dumps({'middle_stops':middle_stops, 'journey_forecast':journey_forecast}))
+    return HttpResponse(json.dumps({'middle_stops':middle_stops, 'journey_forecast':journey_forecast, 'prediction_list':prediction_list}))
 
 
 def show_route(request):
@@ -256,5 +310,5 @@ def get_events(request):
             pass
 
     # print(eventsList)
-    
+
     return HttpResponse(json.dumps({'eventsResponse':eventsList}))

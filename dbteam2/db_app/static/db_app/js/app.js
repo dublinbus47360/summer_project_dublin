@@ -11,6 +11,16 @@ function myMap() {
   currentMap = map;
 }
 
+// create time picker with pickerjs (https://fengyuanchen.github.io/pickerjs)
+var time_input = document.getElementById('time');
+var picker = new Picker(time_input, {
+  format: 'HH:mm',
+  headers: true,
+  text: {title: 'Pick a time'},
+  rows: 3,
+  controls: true
+});
+
 
 // JQuery functions to access CSRFToken from external JS (https://docs.djangoproject.com/en/1.9/ref/csrf/#ajax)
 function getCookie(name) {
@@ -107,13 +117,13 @@ function getEvents() {
     data: { csrfmiddlewaretoken: csrftoken, today: ourdate, lastDay: ourDate4},
     success: function(response) {
       eventsResult = JSON.parse(response).eventsResponse;
-      console.log(eventsResult);
+      // console.log(eventsResult);
       var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
       for (var i = 0; i < eventsResult.length; i++) {
         var d = new Date(eventsResult[i][1]);
-        document.getElementById('events').innerHTML += '<div class="forToggle col-md-3 d-none d-md-block"><div class="event clickable_event"><div class="event_date"><span class="grey_text">'+months[d.getMonth()]+'</span><span>'+d.getDate()+'</span></div><div class="event_info" onclick="goEvent(\''+eventsResult[i][3]+'\')"><span class="grey_text">'+days[d.getDay()]+' - '+eventsResult[i][2].slice(0,5)+'</span><span>'+eventsResult[i][0]+'</span><span class="grey_text">'+eventsResult[i][3]+'</span></div></div></div>';
+        document.getElementById('events').innerHTML += '<div class="forToggle col-md-3 d-none d-md-block"><div class="event clickable_event"><div class="event_date"><span class="grey_text">'+months[d.getMonth()]+'</span><span>'+('0'+d.getDate()).slice(-2)+'</span></div><div class="event_info" onclick="goEvent(\''+eventsResult[i][3]+'\')"><span class="grey_text">'+days[d.getDay()]+' - '+eventsResult[i][2].slice(0,5)+'</span><span>'+eventsResult[i][0]+'</span><span class="grey_text">'+eventsResult[i][3]+'</span></div></div></div>';
 
       }
       events_content = document.getElementById('events').innerHTML;
@@ -347,12 +357,17 @@ function showRoute() {
   })
   $("#route").addClass("d-none");
   document.getElementById('events').innerHTML = events_content;
-  document.getElementById('events').style.setProperty('overflow', 'scroll');
-  document.getElementById('events').style.setProperty('max-height', '115px');
-  document.getElementById('events').style.setProperty('padding-left', '20px');
   document.getElementById('bottom_title').innerHTML = 'Events';
   if (media_query.matches) {
     document.getElementById('burger_button').click();
+    document.getElementById('events').style.setProperty('overflow', 'auto');
+    document.getElementById('events').style.setProperty('max-height', 'none');
+    document.getElementById('events').style.setProperty('padding-left', '0px');
+
+  } else {
+    document.getElementById('events').style.setProperty('overflow', 'scroll');
+    document.getElementById('events').style.setProperty('max-height', '115px');
+    document.getElementById('events').style.setProperty('padding-left', '20px');
   }
 }
 
@@ -385,8 +400,8 @@ function searchRoute() {
   var selected_date = document.getElementById('date').value;
   var selected_time = document.getElementById('time').value;
   var now = new Date();
-  var dateNow = now.getFullYear() + '-' + ('0' + (parseInt(now.getMonth())+1)).slice(-2) + '-' + now.getDate();
-  var timeNow = now.getHours() + ':' + now.getMinutes() + ':00';
+  var dateNow = now.getFullYear() + '-' + ('0' + (parseInt(now.getMonth())+1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+  var timeNow = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':00';
   var startTime, year, month, day, hour, min, datetime;
   if (selected_date == 'Null' && selected_time == 'Enter Time (optional)') {
     startTime = now;
@@ -413,6 +428,13 @@ function searchRoute() {
     min = parseInt(selected_time.slice(3, 5));
     startTime = new Date(year, month, day, hour, min);
     datetime = selected_date + ' ' + selected_time;
+  }
+
+  if (selected_date == 'Null') {
+    weekDay = now.getDay();
+  } else {
+    var dateForWeek = new Date(selected_date);
+    weekDay = dateForWeek.getDay();
   }
 
   var directionsDisplay = new google.maps.DirectionsRenderer;
@@ -446,7 +468,7 @@ function searchRoute() {
       $.ajax({
         type: "POST",
         url: "/search_route/",
-        data: { csrfmiddlewaretoken: csrftoken, googleRequest: JSON.stringify(response), start_time: datetime },
+        data: { csrfmiddlewaretoken: csrftoken, googleRequest: JSON.stringify(response), start_time: datetime, weekDay: weekDay },
         success: function(response) {
           if (response == 'invalid_time') {
             window.alert('Pelase enter a valid time.');
@@ -457,17 +479,24 @@ function searchRoute() {
           console.log(myData);
           middle_stops = myData.middle_stops;
           journey_forecast = myData.journey_forecast;
+          prediction_list = myData.prediction_list;
           displayIntermediate(middle_stops[0]);
-          displayJourneyInfo(googleRequest, 0, journey_forecast);
           document.getElementById('route_options').innerHTML='';
           var optionsArray = [];
           for (var i = 0; i < googleRequest.routes.length; i++) {
+            var tripTime = 0;
             var steps = googleRequest.routes[i].legs[0].steps;
             var option_title = '';
             for (var k = 0; k < steps.length; k++) {
               if (steps[k].travel_mode == 'TRANSIT') {
                 option_title += steps[k].transit.line.short_name;
                 option_title += ' / ';
+              } else if (steps[k].travel_mode == 'WALKING') {
+                if (steps[k].duration.text.length == 5) {
+                  tripTime += parseInt(steps[k].duration.text.slice(0,-4));
+                } else {
+                  tripTime += parseInt(steps[k].duration.text.slice(0,-5));
+                }
               }
             }
             if (option_title == '') {
@@ -476,8 +505,40 @@ function searchRoute() {
               option_title = option_title.slice(0, -3);
             }
 
+            if (prediction_list[i].length == 0) {
+              var duration = googleRequest.routes[i].legs[0].duration.text;
+            } else {
+              for (var k = 0; k < prediction_list[i].length; k++) {
+                if (k % 2 == 0) {
+                  tripTime -= (parseInt(prediction_list[i][k].slice(0,2)) * 60) + parseInt(prediction_list[i][k].slice(3,5));
+                } else {
+                  tripTime += (parseInt(prediction_list[i][k].slice(0,2)) * 60) + parseInt(prediction_list[i][k].slice(3,5));
+                }
+              }
+              if (tripTime < 60) {
+                var duration = tripTime + ' mins';
+              } else {
+                durationHour = Math.floor(tripTime / 60);
+                durationMin = (tripTime % 60);
+                if (durationHour == 1) {
+                  hourString = durationHour + ' hour';
+                } else {
+                  hourString = durationHour + ' hours';
+                }
+                if (durationMin == 1) {
+                  minString = durationMin + ' min';
+                } else {
+                  minString = durationMin + ' mins';
+                }
+                var duration =  hourString + ' ' + minString;
+              }
+            }
+            if (i == 0) {
+              displayJourneyInfo(googleRequest, 0, journey_forecast, duration);
+            }
+
             if (!optionsArray.includes(option_title)) {
-              document.getElementById('route_options').innerHTML+='<option value="' + i + '">' + option_title + '</option>';
+              document.getElementById('route_options').innerHTML+='<option value="' + i + duration + '">' + option_title + '&nbsp&nbsp&nbsp(' +  duration + ')</option>';
               optionsArray.push(option_title);
             }
           }
@@ -486,9 +547,9 @@ function searchRoute() {
             while(markersArray.length) {
               markersArray.pop().setMap(null);
             }
-            directionsDisplay.setRouteIndex(parseInt(route_select.value));
-            displayIntermediate(middle_stops[parseInt(route_select.value)]);
-            displayJourneyInfo(googleRequest, parseInt(route_select.value), journey_forecast);
+            directionsDisplay.setRouteIndex(parseInt(route_select.value.slice(0,1)));
+            displayIntermediate(middle_stops[parseInt(route_select.value.slice(0,1))]);
+            displayJourneyInfo(googleRequest, parseInt(route_select.value.slice(0,1)), journey_forecast, route_select.value.slice(1));
           }
           $("#route").removeClass("d-none");
           // directionsDisplay.setPanel(document.getElementById('panel'));
@@ -534,14 +595,20 @@ function searchRoute() {
       }
 
       // Display all journey info on the bottom of the page
-      function displayJourneyInfo(googleRequest, option, journey_forecast) {
+      var distance_km = 0;
+      function displayJourneyInfo(googleRequest, option, journey_forecast, duration) {
         var journey_summary = '<p>';
         var steps = googleRequest.routes[option].legs[0].steps;
         for (var i = 0; i < steps.length; i++) {
           if (steps[i].travel_mode == 'WALKING') {
-            journey_summary += '<i class="fas fa-walking"></i> ' + steps[i].duration.text.slice(0,-5);
+            if (steps[i].duration.text.length == 5) {
+              journey_summary += '<i class="fas fa-walking"></i> ' + steps[i].duration.text.slice(0,-4);
+            } else {
+              journey_summary += '<i class="fas fa-walking"></i> ' + steps[i].duration.text.slice(0,-5);
+            }
           } else if (steps[i].travel_mode == 'TRANSIT') {
             journey_summary += '<i class="fas fa-bus"></i> ' + steps[i].transit.line.short_name;
+            distance_km += parseFloat((steps[i].distance.text).split(0,-3));
           }
           if (i < steps.length -1) {
             journey_summary += '<i class="fas fa-angle-right step_arrow"></i>'
@@ -549,16 +616,27 @@ function searchRoute() {
         }
         journey_summary += '</p>';
         var journey_steps = '';
+        var count = 0;
         for (var i = 0; i < steps.length; i++) {
           journey_steps += '<p class="journey_step"><span>' + (i+1) + '. </span>'+ steps[i].instructions;
           if (steps[i].travel_mode == 'TRANSIT') {
-            journey_steps += '<span> at ' + steps[i].transit.departure_time.text + 'h</span>';
+            if (prediction_list[option].length == 0) {
+              var depTime = steps[i].transit.departure_time.text;
+            } else {
+              var depTime = prediction_list[option][count];
+              count += 2;
+            }
+            journey_steps += '<span> at ' + depTime + 'h</span>';
           }
           journey_steps += '</p>';
         }
 
+        // console.log(distance_km);
+        var co2_bus = parseInt(distance_km * 0.10097);
+        var co2_car = parseInt(distance_km * 0.19228);
+
         document.getElementById('bottom_title').innerHTML = 'Journey';
-        document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered distance_time"></i> '+googleRequest.routes[option].legs[0].distance.text+'</span><span><i class="fas fa-stopwatch distance_time"></i> '+googleRequest.routes[option].legs[0].duration.text+'</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span>Weather Forecast - ' + journey_forecast + '</span><span>CO2 Emission - 0.0 tonnes</span></div></div></div>';
+        document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered distance_time"></i> '+googleRequest.routes[option].legs[0].distance.text+'</span><span><i class="fas fa-stopwatch distance_time"></i> '+duration+'</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span id="forecastSpan">Weather Forecast: ' + journey_forecast + '</span><span>CO2 Emission (Bus): '+co2_bus+'g</span><span>CO2 Emission (Car): '+co2_car+'g</span></div></div></div>';
         if (media_query.matches) {
           if (toggle_count2 == 0) {
             document.getElementById('bottom_button').click();

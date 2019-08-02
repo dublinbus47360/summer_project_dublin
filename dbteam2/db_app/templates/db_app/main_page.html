@@ -79,15 +79,9 @@
 
     </div>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
     <script type="text/javascript">
-      var time_input = document.getElementById('time');
-      var picker = new Picker(time_input, {
-        format: 'HH:mm',
-        headers: true,
-        text: {title: 'Pick a time'},
-        rows: 3,
-        controls: true
-      });
 
       // Change layout to mobile screen size
       function toMobile(media_query) {
@@ -99,8 +93,17 @@
             $("#form").addClass("col-md-3");
             toggle_count = 0;
           });
+          document.getElementById('events').style.setProperty('overflow', 'auto');
+          document.getElementById('events').style.setProperty('max-height', 'none');
+          document.getElementById('events').style.setProperty('padding-left', '0px');
         } else {
           document.getElementById('header').innerHTML = '<img id="logo" src="{% static 'db_app/img/logo.png' %}" alt="app logo"><h1>Dublin Bus</h1>';
+          $("#form").addClass("d-none");
+          $("#form").addClass("d-md-block");
+          $("#form").addClass("col-md-3");
+          document.getElementById('events').style.setProperty('overflow', 'scroll');
+          document.getElementById('events').style.setProperty('max-height', '115px');
+          document.getElementById('events').style.setProperty('padding-left', '20px');
         }
       }
 
@@ -109,8 +112,6 @@
       media_query.addListener(toMobile);
 
     </script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
     <script type="text/javascript" src="{% static 'db_app/js/tourist_locations.js' %}"></script>
 
