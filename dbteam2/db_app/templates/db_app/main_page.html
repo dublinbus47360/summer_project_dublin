@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>mainpage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'db_app/fontawesome/css/all.css' %}">
+    <link  href="{% static 'db_app/pickerjs/picker.css' %}" rel="stylesheet">
+    <script src="{% static 'db_app/pickerjs/picker.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'db_app/css/app.css' %}">
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <header id="header" class="col">
+          <img id="logo" src="{% static 'db_app/img/logo.png' %}" alt="app logo">
+          <h1>Dublin Bus</h1>
+        </header>
+      </div>
+      <div id="main_section" class="row">
+        <div id="route" class="d-none">
+          <span>Route</span>
+          <select id="route_options"></select>
+        </div>
+        <div id="filterEvent" onclick="toggleEventMarkers()">
+          <i class="fas fa-map-marker-alt" style="font-size:15px; color: #22e866;"></i><span>Events</span>
+        </div>
+        <div id="filterTourism" onclick="toggleTourismMarkers()">
+          <i class="fas fa-map-marker-alt" style="font-size:15px; color: #ee19b9;"></i><span>Tourism</span>
+        </div>
+        <div id="map" class="col-md-9"></div>
+        <div id="form" class="col-md-3 d-none d-md-block">
+          <div class="row form_header">
+            <h4>Travel Time Predictor</h4>
+          </div>
+          <div class="row input">
+            <input id="originInput" class="form-control" type="text" placeholder="Enter Origin" autocomplete="on" runat="server" onclick="setOrigin()"/>
+          </div>
+          <div class="row input">
+            <input id="destinationInput" class="form-control" type="text" placeholder="Enter Destination" autocomplete="on" runat="server" onclick="setDestination()"/>
+          </div>
+          <div class="row input">
+            <select id="date">
+              <option value="Null" selected>Enter Date (optional)</option>
+            </select>
+          </div>
+          <div class="row input">
+            <!-- <select id="time">
+              <option value="Null" selected>Enter Time (optional)</option>
+            </select> -->
+            <input type="text" id="time" value="Enter Time (optional)">
+          </div>
+          <div class="row input">
+            <input id="submit" type="submit" class="form-control font-weight-bold align-middle" value="Go!" onclick="searchRoute()">
+          </div>
+          <div class="row form_header">
+            <h4>Search Bus Routes</h4>
+          </div>
+          <div class="row input">
+            <select id="bus_line">
+              <option value="Null" selected>Enter Bus Line</option>
+            </select>
+          </div>
+          <div class="row input">
+            <input id="submit2" type="submit" class="form-control font-weight-bold align-middle" value="Search" onclick="showRoute()">
+          </div>
+          <div id="terms" onclick="displayTerms()"><i class="fas fa-file-signature"></i><span>Terms and Conditions</span></div>
+        </div>
+      </div>
+      <div class="row bottom_drop">
+        <div class="col-4 d-sm-none">
+          <div id="bottom_button">
+            <p id="bottom_title">Events</p>
+          </div>
+        </div>
+      </div>
+      <div id="events" class="row"></div>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script type="text/javascript">
+
+      // Change layout to mobile screen size
+      function toMobile(media_query) {
+        if (media_query.matches) {
+          document.getElementById('header').innerHTML = '<img id="logo" src="{% static 'db_app/img/logo.png' %}" alt="app logo"><h1>Dublin Bus</h1><button id="burger_button" type="menu" name="button" onclick="toggle_menu()"><div class="burger"></div><div class="burger"></div><div class="burger"></div></button>';
+          document.getElementById('submit').addEventListener("click", function() {
+            $("#form").addClass("d-none");
+            $("#form").addClass("d-md-block");
+            $("#form").addClass("col-md-3");
+            toggle_count = 0;
+          });
+          document.getElementById('events').style.setProperty('overflow', 'auto');
+          document.getElementById('events').style.setProperty('max-height', 'none');
+          document.getElementById('events').style.setProperty('padding-left', '0px');
+        } else {
+          document.getElementById('header').innerHTML = '<img id="logo" src="{% static 'db_app/img/logo.png' %}" alt="app logo"><h1>Dublin Bus</h1>';
+          $("#form").addClass("d-none");
+          $("#form").addClass("d-md-block");
+          $("#form").addClass("col-md-3");
+          document.getElementById('events').style.setProperty('overflow', 'scroll');
+          document.getElementById('events').style.setProperty('max-height', '115px');
+          document.getElementById('events').style.setProperty('padding-left', '20px');
+        }
+      }
+
+      var media_query = window.matchMedia('(max-width: 767px)');
+      toMobile(media_query);
+      media_query.addListener(toMobile);
+
+    </script>
+
+    <script type="text/javascript" src="{% static 'db_app/js/tourist_locations.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'db_app/js/app.js' %}"></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCM9nXFgqm8JbVlEYRAiPv6WTUFGSvyTBU&callback=myMap&libraries=places"></script>
+
+
+  </body>
+</html>

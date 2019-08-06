@@ -1,0 +1,375 @@
+.picker {
+  max-height: 100vh;
+  max-width: 100vw;
+}
+
+main {
+  box-sizing: border-box;
+}
+
+header {
+  height: 13vh;
+  border-bottom: 2px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+}
+
+#logo {
+  width: 60px;
+  height: 60px;
+  margin-right: 20px;
+}
+
+#map {
+  height: 72vh;
+}
+
+#form {
+  background-color: #e6e6e8;
+}
+
+.form_header h4 {
+  font-size: 1.2em;
+}
+
+.input, .form_header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.input input, .input select {
+  font-size: 0.9em;
+  border: 2px solid black;
+  width: 200px;
+  height: 30px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.input option {
+  text-align: center;
+  color: grey;
+}
+
+#bus_line, #time, #date {
+  color: grey;
+  background-color: white;
+  text-align-last: center;
+}
+
+#submit, #submit2 {
+  padding-top: 3px;
+  background-color: #b4b6b4;
+  color: white;
+  margin-bottom: 20px;
+}
+
+#events {
+  border-top: 2px solid black;
+  padding-top: 20px;
+  padding-left: 20px;
+  max-height: 115px;
+  overflow: auto;
+}
+
+.event {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.eventJourney {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.event_date span {
+  display: block;
+  text-align: center;
+}
+
+.event_info {
+  margin-left: 30px;
+}
+
+.event_info p {
+  margin-bottom: 5px;
+}
+
+.clickable_event {
+  cursor: pointer;
+}
+
+.clickable_event:hover .event_info {
+  color: #c6c6cc;
+}
+
+.journey_steps {
+  max-height: 105px;
+  overflow: scroll;
+  padding-right: 20px;
+}
+
+.journey_step {
+  margin-bottom: 4px;
+}
+
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: rgba(0,0,0,.5);
+  -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+}
+
+.event_info span {
+  display: block;
+  text-align: left;
+}
+
+.journey_step span {
+  display: inline;
+  color: #a2a1a2;
+}
+
+.grey_text {
+  color: grey;
+}
+
+#journey {
+  display: none;
+}
+
+body {
+  position: relative;
+}
+
+.bottom_drop {
+  position: absolute;
+  height: 5vh;
+  width: 100%;
+  top: 95vh;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+#bottom_button {
+  height: 100%;
+  width: 100%;
+  background-color: white;
+  border-top: 1px solid black;
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+#bottom_button p {
+  margin-top: 5px;
+}
+
+.step_arrow {
+  margin: 0 5px;
+  color: #a2a1a2;
+}
+
+.icon_distance {
+  color: #a2a1a2;
+  margin-right: 3px;
+  margin-bottom: 7px;
+}
+
+.icon_time {
+  color: #a2a1a2;
+  margin-left: 10px;
+  margin-bottom: 5px;
+}
+
+.icon_fare {
+  color: #a2a1a2;
+  margin-right: 5px;
+}
+
+#main_section {
+  position: relative;
+}
+
+#route {
+  position: absolute;
+  z-index: 9;
+  left: 9px;
+  top: 60px;
+  background-color: white;
+  padding: 9px;
+  border: 1px solid #dedcde;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  color: black;
+}
+
+#route_options {
+  margin-left: 10px;
+  color: white;
+  background-color: #9a9d9a;
+  text-align-last: center;
+  font-size: 0.9em;
+}
+
+#filterEvent, #filterTourism {
+  position: absolute;
+  z-index: 9;
+  right: 26vw;
+  /* left: 12px; */
+  top: 120px;
+  background-color: #9a9d9a;
+  padding: 9px;
+  border: 1px solid #dedcde;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 0.8em;
+  border-radius: 100%;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#filterTourism {
+  top: 185px;
+}
+
+.filterClicked {
+  opacity: 1 !important;
+}
+
+.infowindowTitle {
+  font-weight: bold;
+}
+
+.goToSpan {
+  color: blue;
+  font-size: 0.9em;
+}
+
+.goToSpan:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+#forecastSpan {
+  margin-bottom: 5px;
+}
+
+#terms {
+  color: #9a9d9a;
+  font-size: 0.8em;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+#terms span {
+  margin-left: 5px;
+}
+
+#terms:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 767px) {
+  header {
+    height: 10vh;
+    position: relative;
+    justify-content: flex-start;
+  }
+
+  header h1 {
+    font-size: 1.7em;
+  }
+
+  #logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  header button {
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+  }
+
+  .burger {
+    width: 35px;
+    height: 5px;
+    background-color: black;
+    margin: 6px 0;
+  }
+
+  #map {
+    height: 90vh;
+  }
+
+  main {
+    position: relative;
+  }
+
+  #form {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 60vw;
+    z-index: 10;
+  }
+
+  .event {
+    margin-bottom: 20px;
+  }
+
+  .event_date {
+    width: 17%;
+  }
+
+  .event_info {
+    width: 83%;
+  }
+
+  .event_date span {
+    text-align: center;
+  }
+
+  #events {
+    position: absolute;
+    height: 45vh;
+    top: 55vh;
+    background-color: white;
+    margin: 0;
+    left: 0px;
+    padding-left: 0px;
+    max-height: none;
+  }
+
+  #event2 {
+    max-height: 110px;
+  }
+
+  #filterEvent, #filterTourism {
+    right: 10px;
+  }
+
+}
