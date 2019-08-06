@@ -186,10 +186,21 @@ body {
   color: #a2a1a2;
 }
 
-.distance_time {
+.icon_distance {
+  color: #a2a1a2;
+  margin-right: 3px;
+  margin-bottom: 7px;
+}
+
+.icon_time {
+  color: #a2a1a2;
+  margin-left: 10px;
+  margin-bottom: 5px;
+}
+
+.icon_fare {
   color: #a2a1a2;
   margin-right: 5px;
-  margin-bottom: 5px;
 }
 
 #main_section {
@@ -263,6 +274,22 @@ body {
 
 #forecastSpan {
   margin-bottom: 5px;
+}
+
+#terms {
+  color: #9a9d9a;
+  font-size: 0.8em;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+#terms span {
+  margin-left: 5px;
+}
+
+#terms:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 @media screen and (max-width: 767px) {

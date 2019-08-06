@@ -11,7 +11,7 @@ function myMap() {
   currentMap = map;
 }
 
-// create time picker with pickerjs (https://fengyuanchen.github.io/pickerjs)
+// Create time picker with pickerjs (https://fengyuanchen.github.io/pickerjs)
 var time_input = document.getElementById('time');
 var picker = new Picker(time_input, {
   format: 'HH:mm',
@@ -69,6 +69,11 @@ function getBusLines() {
 }
 getBusLines();
 
+// Create alert for terms and conditions
+function displayTerms() {
+  window.alert('Travel times displayed are based on predictions, which have a margin of error between 4 to 7 minutes.');
+}
+
 // Create new date object after custom number of days have passed
 Date.prototype.addDays = function(days) {
   var date = new Date(this.valueOf());
@@ -104,12 +109,12 @@ document.getElementById('date').innerHTML += "<option value='"+ourdate+"'>"+ourd
 //   }
 // }
 
-// Get events details from TicketMaster API and display on the page
 var events_content;
 var eventsResult;
 var eventMarkers = [];
 var attractionMarkers = [];
 
+// Get events details from TicketMaster API and display on the page
 function getEvents() {
   $.ajax({
     type: "POST",
@@ -159,6 +164,7 @@ function getEvents() {
         });
       }
 
+      // Get tourist attractions details and display on the page
       function getAttractions() {
         for(var j=0; j<attractions.results.length; j++) {
           var marker2=new google.maps.Marker({
@@ -197,6 +203,7 @@ function getEvents() {
   })
 }
 
+// Set specific event address as destination
 function goEvent(place) {
   if (media_query.matches) {
     document.getElementById('burger_button').click();
@@ -214,6 +221,7 @@ function goEvent(place) {
 getEvents();
 
 var toggle_count3 = 0;
+// Toggle event markers on map
 function toggleEventMarkers() {
   if (toggle_count3 == 0) {
     for (var i = 0; i < eventMarkers.length; i++) {
@@ -231,6 +239,7 @@ function toggleEventMarkers() {
 }
 
 var toggle_count4 = 0;
+// Toggle attraction markers on map
 function toggleTourismMarkers() {
   if (toggle_count4 == 0) {
     for (var i = 0; i < attractionMarkers.length; i++) {
@@ -557,8 +566,8 @@ function searchRoute() {
         }
       })
 
-      // Display intermediate bus stops for a given route option
       var markersArray = [];
+      // Display intermediate bus stops for a given route option
       function displayIntermediate(middle_stops) {
         for (var i = 0; i < middle_stops.length; i++) {
           if (typeof middle_stops[i] != 'string') {
@@ -594,8 +603,21 @@ function searchRoute() {
         }
       }
 
-      // Display all journey info on the bottom of the page
+      // Calculate total fare of a given route option
+      function getFare(numStops, line) {
+        if (line.slice(-1) == 'X') {
+          return 3.0;
+        } else if (numStops < 4) {
+          return 1.55;
+        } else if (numStops < 14) {
+          return 2.25;
+        } else {
+          return 2.50;
+        }
+      }
+
       var distance_km = 0;
+      // Display all journey info on the bottom of the page
       function displayJourneyInfo(googleRequest, option, journey_forecast, duration) {
         var journey_summary = '<p>';
         var steps = googleRequest.routes[option].legs[0].steps;
@@ -617,6 +639,7 @@ function searchRoute() {
         journey_summary += '</p>';
         var journey_steps = '';
         var count = 0;
+        var fare = 0;
         for (var i = 0; i < steps.length; i++) {
           journey_steps += '<p class="journey_step"><span>' + (i+1) + '. </span>'+ steps[i].instructions;
           if (steps[i].travel_mode == 'TRANSIT') {
@@ -627,16 +650,19 @@ function searchRoute() {
               count += 2;
             }
             journey_steps += '<span> at ' + depTime + 'h</span>';
+            fare += getFare(steps[i].transit.num_stops, steps[i].transit.line.short_name);
           }
           journey_steps += '</p>';
         }
 
+        fare = '€' + fare.toFixed(2);
+
         // console.log(distance_km);
-        var co2_bus = parseInt(distance_km * 0.10097);
-        var co2_car = parseInt(distance_km * 0.19228);
+        var co2_bus = parseInt(distance_km * 0.10097 * 1000);
+        var co2_car = parseInt(distance_km * 0.19228 * 1000);
 
         document.getElementById('bottom_title').innerHTML = 'Journey';
-        document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered distance_time"></i> '+googleRequest.routes[option].legs[0].distance.text+'</span><span><i class="fas fa-stopwatch distance_time"></i> '+duration+'</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span id="forecastSpan">Weather Forecast: ' + journey_forecast + '</span><span>CO2 Emission (Bus): '+co2_bus+'g</span><span>CO2 Emission (Car): '+co2_car+'g</span></div></div></div>';
+        document.getElementById('events').innerHTML = '<div id="event1" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">INFO</span><span class="grey_text"style="font-size: 2em;"><i class="fas fa-info-circle"></i></span></div><div class="event_info">'+journey_summary+'<span><i class="fas fa-flag-checkered icon_distance"></i> '+googleRequest.routes[option].legs[0].distance.text+'<i class="fas fa-stopwatch icon_time"></i> '+duration+'</span><span><i class="fas fa-money-bill-alt icon_fare"></i>'+fare+' (Adult Leapcard)</span></div></div></div><div id="event2" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">STEPS</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-directions"></i></span></div><div class="event_info journey_steps">'+journey_steps+'</div></div></div><div id="event3" class="col-md-4 d-none d-md-block"><div class="eventJourney"><div class="event_date"><span class="grey_text">ECO</span><span class="grey_text" style="font-size: 2em;"><i class="fas fa-globe-americas"></i></span></div><div class="event_info"><span></span><span id="forecastSpan">Weather Forecast: ' + journey_forecast + '</span><span>CO2 Emission (Bus): '+co2_bus+'g</span><span>CO2 Emission (Car): '+co2_car+'g</span></div></div></div>';
         if (media_query.matches) {
           if (toggle_count2 == 0) {
             document.getElementById('bottom_button').click();

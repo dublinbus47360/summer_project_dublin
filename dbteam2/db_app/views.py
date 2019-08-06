@@ -11,10 +11,15 @@ def main_page(request):
 def get_busLines(request):
     '''Gets the list of all bus lines and respective headsigns'''
 
+    # host='127.0.0.1'
+    # user = 'root'
+    # password = 'A0206304131z'
+    # db = 'db_data'
+
     host='127.0.0.1'
     user = 'root'
-    password = 'A0206304131z'
-    db = 'db_data'
+    password = 'Ucd-con-2019'
+    db = 'dublinBus'
 
     try:
         con = pymysql.connect(host=host,user=user,password=password,db=db, use_unicode=True, charset='utf8')
@@ -33,12 +38,11 @@ def get_busLines(request):
     return HttpResponse(json.dumps({'bus_lines': bus_lines}))
 
 def search_route(request):
-    ''' Gets the intermediate stops for each option route and sends to frontend'''
+    ''' Gets weather forecast, model predictions and intermediate stops for each option route and sends to frontend'''
 
     response = json.loads(request.POST['googleRequest'])
     start_time = request.POST['start_time']
     week_day = int(request.POST['weekDay'])
-    print('weekday is ' + str(week_day))
 
     selected_hour = int(start_time[11:13])
     if (selected_hour > 20):
@@ -103,16 +107,23 @@ def search_route(request):
     stops_info = [0,0,0,0]
 
     def get_middle(response, step, option):
+        ''' Gets the intermediate stops for a given route option'''
 
         try:
             sql = '''select distinct stop_lat,stop_lon,stops.stop_id,stop_name from db_data.stops, db_data.stoptimes_filtered
             where stops.stop_id = stoptimes_filtered.stop_id and db_data.stoptimes_filtered.bus_line=%s
             and db_data.stoptimes_filtered.stop_headsign=%s and (stop_lat between %s and %s) and (stop_lon between %s and %s)'''
 
-            db = pymysql.connect(host="127.0.0.1",  # your host
-                                 user="root",  # username
-                                 passwd="A0206304131z",  # password
-                                 db="db_data")  # name of the database
+            # db = pymysql.connect(host="127.0.0.1",
+            #                      user="root",
+            #                      passwd="A0206304131z",
+            #                      db="db_data")
+
+            db = pymysql.connect(host="127.0.0.1",
+                                 user="root",
+                                 passwd="Ucd-con-2019",
+                                 db="dublinBus")
+
 
             stop_names1 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['departure_stop']['name'] + '%'
             stop_names2 = '%'+ response['routes'][option]['legs'][0]['steps'][step]['transit']['arrival_stop']['name'] + '%'
@@ -200,6 +211,8 @@ def search_route(request):
     prediction_list = []
 
     def run_pickle(line, inputs):
+        ''' Run machine learning model for a given bus stop'''
+
         pickle_path = os.path.join(script_directory, pickle_directory + line + '.pickle')
         random_forest = pickle.load(open(pickle_path,'rb'))
         try:
@@ -270,10 +283,15 @@ def show_route(request):
     input_line = input[0]
     input_headsign = input[1][1:-1]
 
+    # host='127.0.0.1'
+    # user = 'root'
+    # password = 'A0206304131z'
+    # db = 'db_data'
+
     host='127.0.0.1'
     user = 'root'
-    password = 'A0206304131z'
-    db = 'db_data'
+    password = 'Ucd-con-2019'
+    db = 'dublinBus'
 
     try:
         con = pymysql.connect(host=host,user=user,password=password,db=db, use_unicode=True, charset='utf8')
@@ -287,6 +305,7 @@ def show_route(request):
     return HttpResponse(json.dumps({'route_stops':result}))
 
 def get_events(request):
+    ''' Gets the events list from TicketMaster API and sends to frontend'''
 
     today = request.POST['today']
     # print(today)
